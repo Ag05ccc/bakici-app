@@ -1,6 +1,6 @@
 # Building Radio Scanner — System Plan
 
-Status: proposed architecture; the current app implements single-Pi Bluetooth scanning and a browser GUI. This document plans the multi-Pi and Wi-Fi extension.
+Status: implemented software architecture on `development/building-radio-system`; physical Pi pilot and rollout remain unverified. See [development-progress.md](development-progress.md) for observed results and outstanding hardware checks.
 
 ## 1. Goal and first-version defaults
 

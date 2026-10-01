@@ -40,9 +40,9 @@ Run from the project root after the virtual environment is set up as described i
 
 Stop the local GUI before using the same port for the later receiving server. For a remote browser use the server's actual LAN address and bind the server to `0.0.0.0`.
 
-## Proposed commands for later stages
+## Commands for the implemented stages
 
-These interfaces must be delivered and documented by their stages; **they do not exist yet**. If a command changes during implementation, update both the demo instructions and this plan before review. Copy example configurations to ignored `*.local.json` files, then set matching IDs/keys and the server URL. Use test-only keys for simulated nodes.
+These interfaces are implemented on `development/building-radio-system`. Use them at the corresponding stage; software implementation does not imply physical acceptance. Copy example configurations to ignored `*.local.json` files, then set matching IDs/keys and the server URL. Use test-only keys for simulated nodes. See [acceptance-results.md](docs/acceptance-results.md) for a check-by-check evidence index.
 
 | Available after | Command / action |
 | --- | --- |

@@ -75,7 +75,17 @@ Repeat: `node tools/check_browser.mjs` on a development PC with Node and Chrome.
 - PASS: server unit verification with `systemd-analyze verify`. Agent unit syntax verified with a temporary copy substituting the local Python path; its production `/opt/bakici-app/.venv/bin/python` is not installed on this PC.
 - NOT RUN: actual Pi installation, service-account scan permissions, service crash/intentional-stop/reboot tests, Wi-Fi uplink coexistence, rollback, and the 30-minute two-Pi run. No accounts, services, or network settings were changed on the development PC.
 
-## Remaining stages
+## Stage 8 — Nine-node readiness; physical rollout pending
+
+- Prepared the nine-row location/installation checklist, floor-by-floor rollout procedure, and 60-minute physical acceptance commands. No Pi installation is claimed.
+- PASS: generated a fresh private configuration set in a temporary directory, started a standard-library server, and sent continuous synthetic reports for all nine configured nodes.
+- PASS: 60-second desktop monitoring run, 12 samples, zero failed samples/request failures/invalid responses, both radios fresh on all nine nodes. Server RSS stayed at 24,820 KiB across samples; cumulative CPU increased by 0.37 seconds. These small synthetic fixtures are a smoke check, not a Pi capacity or hour-long acceptance benchmark.
+- PASS: final complete automated suite — 146 tests with warnings treated as errors; JavaScript syntax checks for both GUIs and the optional browser harness.
+- NOT RUN: deployment to nine physical Pis, actual location/IP verification, physical node loss, the 30-minute pilot, the 60-minute full-hardware run, and the owner's physical-system walkthrough. No Pi addresses or authenticated deployment access are available here.
+
+Detailed coverage: [acceptance-results.md](docs/acceptance-results.md). Keep the physical evidence sheet as NOT RUN until those actions are actually performed.
+
+## Stage status
 
 | Stage | Software work | Physical acceptance |
 | --- | --- | --- |
@@ -85,4 +95,4 @@ Repeat: `node tools/check_browser.mjs` on a development PC with Node and Chrome.
 | 5 — Failure isolation | 46 registry/agent/system tests pass | Network/power checks pending pilot |
 | 6 — Building dashboard | Implemented; real browser/synthetic nine-node checks pass | Owner walkthrough and physical nodes pending |
 | 7 — Two-Pi pilot | Deployment/configuration/monitoring artifacts prepared and tested | NOT RUN — physical Pis/access unavailable |
-| 8 — Nine-Pi deployment | Not started | NOT RUN — physical Pis/access unavailable |
+| 8 — Nine-Pi deployment | Rollout procedure and nine-node simulated readiness checked | NOT RUN — physical Pis/access unavailable |

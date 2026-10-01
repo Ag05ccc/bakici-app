@@ -15,7 +15,7 @@ Execution update: the owner has authorized proceeding through every stage on bra
 
 Keep each stage as a small, separately reviewable Git change. Avoid mixing unrelated cleanup or later-stage features into it. Changes to the architecture or dependencies must be explained at the stage review.
 
-## Current starting point
+## Starting point before this branch
 
 - `scan_bluetooth.py`, its CLI, and a single-machine browser GUI already exist.
 - Bluetooth uses BlueZ and `dbus-fast`; the web server and tests use Python's standard library.
@@ -166,17 +166,17 @@ Finalize `pi-01` through `pi-09`, three per floor. Verify every physical label, 
 
 ## Stage review log
 
-Update this table during implementation, not in advance. Passing a test does not automatically approve the next stage.
+Update results from observed evidence. Standing authorization covers progression; it does not turn missing physical checks into passed tests. Full evidence and repeatable commands are in [development-progress.md](development-progress.md).
 
-| Stage | Development status | Test evidence / hardware checks pending | Owner decision |
+| Stage | Development status | Test evidence / hardware checks pending | Execution authorization |
 | --- | --- | --- | --- |
-| 1 | Existing implementation; verification not started | Not run for this plan | Pending |
-| 2 | Not started | Not run | Pending |
-| 3 | Not started | Not run | Pending |
-| 4 | Not started | Not run | Pending |
-| 5 | Not started | Not run | Pending |
-| 6 | Not started | Not run | Pending |
-| 7 | Not started | Not run | Pending |
-| 8 | Not started | Not run | Pending |
+| 1 | Bluetooth baseline verified | Automated + live PC scans pass; controlled Pi fixtures pending | Standing authorization |
+| 2 | Wi-Fi implemented | Automated + live PC scan pass; Pi service permissions pending | Standing authorization |
+| 3 | Server/registry implemented | Stdlib-only tests and process demo pass | Standing authorization |
+| 4 | Agent implemented | Simulated and live PC end-to-end checks pass | Standing authorization |
+| 5 | Failure recovery tested | Real HTTP integration and timing tests pass; Pi power/network tests pending | Standing authorization |
+| 6 | Building UI implemented | 11 real-browser checks pass with synthetic nodes | Standing authorization |
+| 7 | Deployment artifacts prepared | Config/monitor tests and unit syntax checks pass; physical pilot NOT RUN | Standing authorization; hardware unavailable |
+| 8 | Rollout procedure/checklist prepared | Nine-node simulated monitoring passes; physical rollout NOT RUN | Standing authorization; hardware unavailable |
 
 At each review record: application commit/version, changed files, commands used, test results, a short demo result, unresolved issues, and the owner's decision. Keep raw device exports and keys out of review notes committed to Git.
