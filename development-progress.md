@@ -44,6 +44,16 @@ Repeat the server/helper commands in the protocol document. No radio hardware is
 - PASS: a live agent and separate server process on Ubuntu produced an online node, fresh Bluetooth (4 observations) and Wi-Fi (18 APs), plus heartbeat state. SIGTERM stopped the agent with exit 0. Raw discovery data was not committed.
 - NOT RUN: the same path on Raspberry Pi hardware or its service account.
 
+## Stage 5 — Failure isolation and recovery
+
+- Added `tests/test_system.py` for actual HTTP integration between independently scheduled agents and the registry, using synthetic radio records.
+- PASS: one radio error leaves the other radio and another agent working; stopping one agent makes only that node offline at the configured deadline.
+- PASS: server outage leaves scanning active; a new server registry starts empty and receives later sequence numbers after recovery. A heartbeat alone never restores previous detections.
+- PASS: combined registry/agent/system suite — 46 tests under `python3 -S -W error`, including monotonic boundary checks, independent radio ages, disabled/re-enabled state, request rejection, bounded upload lanes, and cancellation.
+- NOT RUN: physical radio removal, Pi power/network loss, or systemd restart behaviour on actual Pis; these remain pilot checks.
+
+Repeat: `python3 -S -W error -m unittest discover -s tests -p 'test_system.py' -v`. Exact count assertions use synthetic records; they do not depend on changing nearby devices.
+
 ## Remaining stages
 
 | Stage | Software work | Physical acceptance |
@@ -51,7 +61,7 @@ Repeat the server/helper commands in the protocol document. No radio hardware is
 | 2 — Wi-Fi | Implemented and checked on development PC | Pending Pi scan under service user |
 | 3 — Receiving server | Implemented; 35 stdlib tests and process demo pass | Not required for synthetic API checks |
 | 4 — Reporting agent | Implemented; simulated and live desktop end-to-end checks pass | Pending Pi end-to-end checks |
-| 5 — Failure isolation | Not started | Network/power checks pending pilot |
+| 5 — Failure isolation | 46 registry/agent/system tests pass | Network/power checks pending pilot |
 | 6 — Building dashboard | Not started | Owner walkthrough pending |
 | 7 — Two-Pi pilot | Not started | NOT RUN — physical Pis/access unavailable |
 | 8 — Nine-Pi deployment | Not started | NOT RUN — physical Pis/access unavailable |
