@@ -204,3 +204,97 @@ References from the app comparison, used for interaction ideas:
 - [ESPresense Companion](https://espresense.com/companion/): floor navigation and labelled node placement; its device-position estimation is a separate feature.
 
 Adapt those interaction patterns to the existing lightweight application; preserve the scanner/agent/server separation and the freshness rules in the system plan.
+
+## 11. [opus] Review findings and proposed additions
+
+Source: interface review on 2026-10-01 at `b9e0e9a`, using the nine-node demo (`--error-radio pi-08:wifi --empty-radio pi-09:bluetooth`), screenshots at 1440px and 390px, and contrast calculated from the colours in `building.css`. Items tagged **[opus]** are proposals only. They join a stage when the owner moves them into that stage and the status table above.
+
+### [opus] Observed gaps
+
+- Small, low-contrast text: 41 of 60 `font-size` declarations in `building.css` are 11px or smaller, down to 8px. Measured contrast below the 4.5:1 target: address type 2.5:1 (9px), footer 2.75:1 (10px), building note 2.7:1 (9px), marker state 3.0:1 (8px), table headers 3.2:1 (9px), `--muted` secondary text 4.05:1 (10–11px).
+- The introductory heading takes about 230px above the controls, while connection state and last-received time sit in the header corner and the footer.
+- Shared observations list one line per reporter; the demo shared beacon row is about 165px tall with 8 reporters.
+- Details render below the table in the same card. Selecting a row requires scrolling, and the table (390px) and properties (370px) each scroll inside the page. Identical properties (Address, AddressType, Name) repeat for every reporter, and every value uses monospace.
+- Retained results from a failed radio (Pi 08 Wi-Fi error) use the same selected-row styling as fresh results; the summary reads `— current · Scan error`.
+- At 390px the building map is about 750px tall before any result appears, and MAC addresses wrap mid-octet.
+- `building.css` contains 78 distinct hard-coded colour values.
+
+### [opus] Proposed additions
+
+Quick wins (CSS only):
+
+1. Type scale: 14px body text, 12px minimum; fix the failing combinations above.
+2. Replace hard-coded colours with custom properties on `:root`, so contrast fixes happen in one place and later themes stay cheap. Themes themselves remain outside these stages.
+3. Replace the introductory heading with a sticky top bar: radio switch, Pis online, `Live · updated 2s ago`, Export.
+4. Keep MAC/BSSID values on one line; use a download icon on Export instead of `↗`.
+5. Give stale, error, offline and waiting each a distinct icon/shape plus text; the legend currently merges them into two colour pairs.
+
+Layout:
+
+6. Desktop three-column layout: compact map | result list | sticky details, with no nested scroll regions.
+7. Reduce floor-plan height; on narrow screens show the nine Pis as a compact 3×3 grid so results are reachable without scrolling past the map.
+8. Show scope as a breadcrumb (`Building › Floor 3 › Pi 08 ✕`) instead of the All observations toggle button.
+
+Interaction:
+
+9. Link list and map: hovering or selecting an observation highlights the Pis that reported it and shows each Pi's signal on its marker. Uses existing per-Pi measurements and does not estimate position (section 4).
+10. Compact reporter cell: `8 Pis · best −43 dBm (Pi 01)` plus signal bars, keeping dBm/percent units visible; the full per-Pi list moves to details.
+11. Comparison details: show properties identical across reporters once, and a per-Pi table only for values that differ. Every reported value stays visible; raw All properties stays in a collapsed section.
+12. A `3 new · Sort now` indicator consistent with the no-reorder rule, plus a brief highlight for appended rows.
+13. Keep radio, scope, query and selection in the URL hash so refresh, bookmarks and Back keep the view. No storage; this is not the deferred saved-filters feature.
+14. Keyboard shortcuts: `/` search, ↑/↓ rows, `Esc` clears selection, `b`/`w` radio. Shortcuts do not fire while typing in an input.
+15. Amber retained-results banner in the list plus dimmed rows when a Pi's selected radio is not fresh; replace the `— current · …` summary wording.
+16. Make Pis online clickable to open the UX-3 attention list; show it in amber when anything needs attention.
+17. CSV export beside JSON, using the same derived rows and filter metadata.
+
+### [opus] Suggested placement
+
+| Proposals | Suggested stage |
+| --- | --- |
+| 1–5 | New UX-0 before UX-1, so later stages are not built on 9px text; UX-4 keeps the final walkthrough |
+| 12–14 | UX-1 |
+| 6, 10, 11, 15 | UX-2 |
+| 7–9, 16 | UX-3 |
+| 17 | With the UX-1 export change, or later |
+
+## 12. [codex] Feedback on Opus's review
+
+Reviewed 2026-10-01 against the current building assets and registry. Opus's original comments above are preserved. This section adds recommendations and implementation boundaries; it does not mark any proposed UI change as implemented or alter the stage-status table.
+
+### [codex] Verified findings
+
+The readability concern is supported by the source. There are 60 fixed-pixel `font-size` declarations, 41 at 11px or smaller, plus one additional `clamp(...)` declaration. I also counted 78 unique hexadecimal colour literals. Calculating contrast for the stated foreground/background pairs reproduces Opus's results: address type 2.52:1, footer 2.75:1, building note 2.72:1, marker state 2.97:1, table headers 3.17:1, and `--muted` on white 4.05:1. These are checks of those colour pairs, not a complete accessibility audit.
+
+The code also confirms separate fixed-height table/property scrolling, repeated per-reporter property lists, and full row replacement when observation data changes. The quoted screenshot dimensions remain Opus's visual measurements; I did not independently remeasure them for this review.
+
+### [codex] Proposal-by-proposal feedback
+
+| Opus item | Recommendation | Boundary / acceptance detail |
+| --- | --- | --- |
+| 1. Type scale and contrast | Agree; do this before UX-1. | Use the proposed 14px reading size and 12px minimum for secondary text. Check normal, selected, hover, retained and disconnected states after the change. Larger text must not force addresses or buttons outside the viewport. |
+| 2. Colour variables | Agree; keep it small. | Introduce semantic variables for text, surfaces, borders, focus and health states. Consolidate repeated purposes; avoid turning all 78 literals into 78 independent settings or building a theme system. |
+| 3. Compact sticky top bar | Agree with a shorter header; qualify the status wording. | Prefer `Server connected · Dashboard received 2s ago`. A successful dashboard poll does not prove that any Pi or radio has fresh results. Preserve separate scan ages. Sticky controls must not cover focused content at narrow widths or 200% zoom. This includes HTML/JS work, not just CSS. |
+| 4. Addresses and export icon | Agree. | Keep each MAC/BSSID together, allowing a contained scroll or more row space at narrow widths rather than shrinking text. Keep the visible Export label and use a download icon; an icon alone is insufficient. |
+| 5. Distinct health indicators | Agree. | Keep readable text for Fresh, Stale, Scan error, Offline, Waiting and Disabled. A shape/icon supplements the text; it must not replace it. Server disconnection remains its own state. This also requires markup/rendering changes. |
+| 6. Three-column desktop layout | Conditional; try during UX-2 after enlarging text. | Use it only when map, list and details remain readable; keep a two-column/stacked fallback. Do not make a tall sticky detail panel's bottom unreachable. Reduce competing vertical scrollers; a contained horizontal scroll for large raw values can remain. |
+| 7. Compact mobile map | Agree with a floor-labelled overview. | Use three labelled floor groups ordered 3, 2, 1, with three Pis in each. Treat a compact grid as a navigation overview, not a representation of configured x/y positions. Keep an expandable building diagram available so actual configured placement can still be inspected. |
+| 8. Scope breadcrumb | Agree for UX-3. | `Building` means all floors; `Floor 3` means all eligible Pis on that floor. Give the close action the accessible name Clear Pi selection and return it to the floor view. Align this with the floor selector's state. |
+| 9. Linked map/list | Agree for selected observations first. | Highlight in-scope reporting Pis on mouse or keyboard selection. Keep signal separate from the scan-count badge, and mark retained measurements as old. Do not move markers or imply device position. Hover-only behaviour is optional later. |
+| 10. Compact reporter cell | Strong agreement for UX-2. | Use `8 Pis · strongest −43 dBm · Pi 01`; count distinct Pi IDs, not the number of records in the group. Compute the strongest known value only from in-scope reporters. Preserve each measurement in details; bars are optional, and Unknown must not become zero. |
+| 11. Shared-property comparison | Agree with a limited first version. | Display an identity field once only when every in-scope reporter explicitly supplies the same value. Keep conflicting or missing values per Pi. Preserve distinctions between absent, empty, false and zero. Leave nested manufacturer/service data in per-Pi expandable sections; a generic comparison engine is unnecessary. Never merge pairing/connection or freshness into a building-wide device status. |
+| 12. New-row indicator | Agree for UX-1 if the definition is explicit. | It counts matching rows appended since the last explicit sort, not newly discovered physical devices. Exclude the initial load, remove vanished rows from the count, and reset on query/scope/radio changes or Sort now. Any highlight must respect reduced-motion preferences. |
+| 13. URL hash state | Useful; defer to a separate checkpoint after UX-3. | Stabilize scope/filter behaviour first. Validate restored values, handle removed Pis, and avoid adding a history entry for every keystroke or poll. Persist view controls only initially; a removed observation must not reappear as a current selection. |
+| 14. Keyboard shortcuts | Move to UX-4; native controls come first. | Tab, Shift+Tab, Enter and Space should already work in each stage. Consider `/` and contextual Escape later. Defer global arrow interception and `b`/`w`; shortcuts must ignore editing controls, contenteditable, modifier combinations and text composition. |
+| 15. Retained-results banner | Strong agreement; add in UX-2. | Prefer `Wi-Fi scan failed · showing previous results` with the actual scan-report age. Use a labelled banner/background treatment rather than reducing text opacity below the contrast target. Do not describe every non-fresh state as an error; never-reported radios have no retained results. |
+| 16. Clickable Pis online | Agree with separate connectivity and attention counts. | Use a real button. `9/9 online` may coexist with `1 radio needs attention`; show both facts rather than letting an amber online number imply a Pi is offline. Open the attention list without changing observation scope until an item is selected. |
+| 17. CSV export | Defer; keep JSON in UX-1. | CSV needs its own flat schema, defined rows per reporting Pi/observation, scope/freshness fields, quoting and spreadsheet-safe handling of device-supplied text. It should not delay making the existing JSON export match the visible filtered rows. |
+
+### [codex] Recommended implementation order
+
+1. **UX-0: readability foundation.** Adopt the small font/contrast/colour-variable/address/icon/health-label fixes from items 1, 2, 4 and 5, plus a shorter heading. Check desktop, 390px, zoom and all health states. Keep the full sticky-toolbar restructuring out of this first small change.
+2. **UX-1: search, stable rows, explicit sorting and matching JSON export.** Keep the existing scope and include item 12's bounded new-row indicator. Focus must survive polling; preserving it only during an initial click is insufficient.
+3. **UX-2: compact reporters and readable details.** Prioritize items 10, 11 and 15. Try item 6 only at widths where the larger type still fits. Keep every per-Pi value available.
+4. **UX-3: building navigation.** Add floor scope, breadcrumb, compact mobile overview, selection-to-map highlighting and the attention list from items 7–9 and 16. Test a shared observation reported from several floors to catch out-of-scope data leakage.
+5. **UX-4: complete accessibility and interaction walkthrough.** Recheck the earlier improvements, finalize toolbar behaviour, and consider only the shortcuts that improve the demonstrated workflow.
+
+URL state and CSV stay later, independently reviewable additions. The first useful change should improve readability without taking on all 17 proposals at once. When consolidating this feedback into the executable plan, update sections 3–9 and the status table together so the implementation has one consistent set of requirements.
