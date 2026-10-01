@@ -175,7 +175,7 @@ Update results from observed evidence. Standing authorization covers progression
 | 3 | Server/registry implemented | Stdlib-only tests and process demo pass | Standing authorization |
 | 4 | Agent implemented | Simulated and live PC end-to-end checks pass | Standing authorization |
 | 5 | Failure recovery tested | Real HTTP integration and timing tests pass; Pi power/network tests pending | Standing authorization |
-| 6 | Building UI implemented | 11 real-browser checks pass with synthetic nodes | Standing authorization |
+| 6 | Building UI implemented | 15 real-browser checks pass, including the local scanner workflow with synthetic observations | Standing authorization |
 | 7 | Deployment artifacts prepared | Config/monitor tests and unit syntax checks pass; physical pilot NOT RUN | Standing authorization; hardware unavailable |
 | 8 | Rollout procedure/checklist prepared | Nine-node simulated monitoring passes; physical rollout NOT RUN | Standing authorization; hardware unavailable |
 
