@@ -6,7 +6,7 @@ A small Bluetooth scanner with a browser GUI and a reusable Python backend. It d
 - **Frontend:** plain HTML, CSS, and JavaScript in `static/`. No build step, external fonts, CDN, or JavaScript packages. The three frontend files total about 21 KB uncompressed.
 - **Dependencies:** Python 3.11+, the system BlueZ service, and **one pip package: `dbus-fast`**. The GUI introduces no additional pip dependencies.
 
-The current app scans Bluetooth on one computer or Pi. The planned multi-Pi building dashboard and Wi-Fi scanning are described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) one stage at a time, with matching checks in [test-plan.md](test-plan.md) and an owner review before each next stage.
+The app includes a Bluetooth GUI and separate Bluetooth/Wi-Fi terminal scanners. The multi-Pi design is described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) and matching checks in [test-plan.md](test-plan.md); completed stages and pending hardware checks are recorded in [development-progress.md](development-progress.md).
 
 ## Raspberry Pi setup
 
@@ -76,7 +76,23 @@ JSON output is an array of objects with `path` (the BlueZ object path) and `prop
 
 Exit codes: `0` for a completed scan (including no devices), `1` for a Bluetooth failure, `2` for invalid arguments, and `130` for Ctrl+C. On failure, check stderr; stdout may be empty.
 
-## Discovery limits
+## Run the Wi-Fi scanner
+
+Wi-Fi discovery uses the OS NetworkManager service and the same `dbus-fast` dependency. It lists nearby access points, not devices connected to them. It does not change network connections or enable monitor mode.
+
+```bash
+.venv/bin/python scan_wifi.py --timeout 15
+.venv/bin/python scan_wifi.py --timeout 15 --json
+.venv/bin/python scan_wifi.py --interface wlan0 --json
+```
+
+If no interface is specified, the first managed Wi-Fi interface in name order is used. The positive finite timeout bounds the whole operation. The scanner waits for completion and excludes cached access points outside this scan's observation window. Ctrl+C keeps fresh results already read and releases its D-Bus connection.
+
+Records use `{path, properties}`. `BSSID` identifies an AP; `SSID` is display text and `SSIDHex` preserves the original bytes, also retained as `Ssid`. `Strength` is quality **in percent**, not dBm; `Frequency` is MHz; unknown channels are `null`. `Security` describes advertised authentication. `MaxBitrate` is advertised capability in Kb/s, not measured throughput. Original exposed properties remain available. JSON goes to stdout; status/errors go to stderr. Exit codes follow the Bluetooth CLI (0 success, 1 failure, 2 arguments, 130 interrupted).
+
+The scan requires NetworkManager Wi-Fi scan permission for the running user. Test this under the service account on a Pi; a desktop user's successful scan does not prove headless service permissions. See the [NetworkManager wireless API](https://networkmanager.dev/docs/api/latest/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html) and [access-point properties](https://networkmanager.dev/docs/api/latest/gdbus-org.freedesktop.NetworkManager.AccessPoint.html).
+
+## Bluetooth discovery limits
 
 - Classic devices must be discoverable; BLE devices must be advertising. Put a known Classic headset into its discoverable/pairing mode to test discovery, without pairing through this app.
 - Devices already stored by BlueZ are included only after a new device object or discovery-related property update occurs during this scan. A name, pairing, or connection-status change alone does not count as a fresh sighting.

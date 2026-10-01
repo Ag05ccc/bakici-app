@@ -16,11 +16,21 @@ Environment: Ubuntu development PC, x86_64, Python 3.12.3. BlueZ and NetworkMana
 
 Repeatable demo commands are in T1 of [test-plan.md](test-plan.md). No baseline code changes were needed.
 
+## Stage 2 — Standalone Wi-Fi
+
+- Implemented `scan_wifi.py` and its CLI with the existing `dbus-fast` dependency. Bluetooth and Wi-Fi are separate importable modules.
+- PASS: 27 fake-backend Wi-Fi tests, covering completion races, fresh cache filtering, binary/hidden SSIDs, channel/security formatting, permissions, timeout, and cancellation.
+- PASS: existing Bluetooth and local web tests (34 tests); combined scanner/local-GUI suite: 61 tests.
+- PASS: live Ubuntu Wi-Fi scan returned 12 fresh AP records, valid JSON, preserved raw SSID bytes, and signal percentages in range. No AP names or addresses were committed.
+- NOT RUN: a known-AP scan on a physical Pi under its service account or on a Wi-Fi reporting uplink; this PC currently reports over Ethernet.
+
+Repeat: `.venv/bin/python scan_wifi.py --timeout 15 --json`. See T2 for individual failure checks.
+
 ## Remaining stages
 
 | Stage | Software work | Physical acceptance |
 | --- | --- | --- |
-| 2 — Wi-Fi | In progress | Pending Pi scan under service user |
+| 2 — Wi-Fi | Implemented and checked on development PC | Pending Pi scan under service user |
 | 3 — Receiving server | Not yet accepted | Not required for synthetic API checks |
 | 4 — Reporting agent | Not started | Pending Pi end-to-end checks |
 | 5 — Failure isolation | Not started | Network/power checks pending pilot |
