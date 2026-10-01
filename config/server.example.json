@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {"id": "pi-01", "label": "Pi 01", "floor": 1, "location": "Floor 1 — left", "x": 20, "y": 50, "api_key": "example-only-pi-01-change-me"},
+    {"id": "pi-02", "label": "Pi 02", "floor": 1, "location": "Floor 1 — center", "x": 50, "y": 50, "api_key": "example-only-pi-02-change-me"},
+    {"id": "pi-03", "label": "Pi 03", "floor": 1, "location": "Floor 1 — right", "x": 80, "y": 50, "api_key": "example-only-pi-03-change-me"},
+    {"id": "pi-04", "label": "Pi 04", "floor": 2, "location": "Floor 2 — left", "x": 20, "y": 50, "api_key": "example-only-pi-04-change-me"},
+    {"id": "pi-05", "label": "Pi 05", "floor": 2, "location": "Floor 2 — center", "x": 50, "y": 50, "api_key": "example-only-pi-05-change-me"},
+    {"id": "pi-06", "label": "Pi 06", "floor": 2, "location": "Floor 2 — right", "x": 80, "y": 50, "api_key": "example-only-pi-06-change-me"},
+    {"id": "pi-07", "label": "Pi 07", "floor": 3, "location": "Floor 3 — left", "x": 20, "y": 50, "api_key": "example-only-pi-07-change-me"},
+    {"id": "pi-08", "label": "Pi 08", "floor": 3, "location": "Floor 3 — center", "x": 50, "y": 50, "api_key": "example-only-pi-08-change-me"},
+    {"id": "pi-09", "label": "Pi 09", "floor": 3, "location": "Floor 3 — right", "x": 80, "y": 50, "api_key": "example-only-pi-09-change-me"}
+  ],
+  "freshness": {"node": 60, "bluetooth": 60, "wifi": 150}
+}

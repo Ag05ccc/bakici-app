@@ -15,9 +15,6 @@ import threading
 import time
 from urllib.parse import urlsplit
 
-from scan_bluetooth import ScanError, scan, signal_sort_key
-
-
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
@@ -37,8 +34,12 @@ def scan_duration(value):
 class ScanService:
     """Share one scan across browser clients; own its event loop in a worker."""
 
-    def __init__(self, scan_function=scan):
-        self._scan = scan_function
+    def __init__(self, scan_function=None):
+        # Server-only mode must run on a machine without radio dependencies.
+        from scan_bluetooth import ScanError, scan, signal_sort_key
+        self._scan = scan_function or scan
+        self._scan_error = ScanError
+        self._sort_key = signal_sort_key
         self._lock = threading.Lock()
         self._thread = None
         self._loop = None
@@ -63,7 +64,7 @@ class ScanService:
                 "error": self._error,
                 "timeout": self._timeout,
                 "elapsed": round(elapsed, 1),
-                "devices": sorted(self._devices.values(), key=signal_sort_key),
+                "devices": sorted(self._devices.values(), key=self._sort_key),
             }
 
     def start(self, duration):
@@ -125,7 +126,7 @@ class ScanService:
         records = None
         try:
             records = asyncio.run(self._scan_once(duration))
-        except ScanError as exc:
+        except self._scan_error as exc:
             error = str(exc)
         except Exception:
             logging.exception("Unexpected scanner failure")
@@ -150,8 +151,11 @@ class ScanService:
 
 
 class ScannerHTTPServer(ThreadingHTTPServer):
-    def __init__(self, address, service):
+    request_timeout = 10
+
+    def __init__(self, address, service=None, *, registry=None):
         self.service = service
+        self.registry = registry
         super().__init__(address, ScannerHandler)
 
 
@@ -160,7 +164,7 @@ class ScannerHandler(BaseHTTPRequestHandler):
 
     def setup(self):
         super().setup()
-        self.connection.settimeout(10)
+        self.connection.settimeout(self.server.request_timeout)
 
     def log_request(self, code="-", size="-"):
         # Polling should not fill the terminal or the Pi's logs.
@@ -185,7 +189,12 @@ class ScannerHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
-        if path == "/api/status":
+        if self.server.registry is not None:
+            if path in {"/", "/api/dashboard"}:
+                self._send(HTTPStatus.OK, self.server.registry.snapshot())
+            else:
+                self._send(HTTPStatus.NOT_FOUND, {"error": "Not found."})
+        elif path == "/api/status":
             self._send(HTTPStatus.OK, self.server.service.snapshot())
         elif path in STATIC_FILES:
             filename, content_type = STATIC_FILES[path]
@@ -203,6 +212,9 @@ class ScannerHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
+        if self.server.registry is not None:
+            self._receive_report(path)
+            return
         if path not in {"/api/scan", "/api/stop"}:
             self._send(HTTPStatus.NOT_FOUND, {"error": "Not found."})
             return
@@ -237,18 +249,66 @@ class ScannerHandler(BaseHTTPRequestHandler):
             return
         self._send(HTTPStatus.ACCEPTED if path == "/api/scan" else HTTPStatus.OK, self.server.service.snapshot())
 
+    def _receive_report(self, path):
+        from registry import ReportError
+        if path != "/api/reports":
+            self._send(HTTPStatus.NOT_FOUND, {"error": "Not found."})
+            return
+        if self.headers.get_content_type() != "application/json":
+            self._send(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "Send an application/json request."})
+            return
+        try:
+            if self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:
+                raise ValueError("Send one Content-Length header; transfer encoding is unsupported.")
+            length = int(self.headers["Content-Length"])
+            if length > 1024 * 1024:
+                self._send(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "Report exceeds 1 MiB."})
+                return
+            if length <= 0:
+                raise ValueError("Send a nonempty JSON object.")
+            raw = self.rfile.read(length)
+            if len(raw) != length:
+                raise ValueError("Incomplete request body.")
+            def reject_constant(value):
+                raise ValueError("JSON numbers must be finite.")
+            data = json.loads(raw, parse_constant=reject_constant)
+            authorization = self.headers.get("Authorization", "")
+            token = authorization[7:] if authorization.startswith("Bearer ") else ""
+            self.server.registry.accept(data, token, self.client_address[0])
+        except ReportError as exc:
+            self._send(exc.status, {"error": str(exc)})
+            return
+        except (ValueError, UnicodeDecodeError, RecursionError):
+            self._send(HTTPStatus.BAD_REQUEST, {"error": "Invalid JSON report or request length."})
+            return
+        except TimeoutError:
+            self._send(HTTPStatus.REQUEST_TIMEOUT, {"error": "The request body did not arrive in time."})
+            return
+        self._send(HTTPStatus.OK, {"accepted": True})
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--mode", choices=("local", "server"), default="local", help="local Bluetooth GUI or building report server")
+    parser.add_argument("--config", help="server registry JSON file (required in server mode)")
     parser.add_argument("--host", default="127.0.0.1", help="bind address (use 0.0.0.0 to access from another computer)")
-    parser.add_argument("--port", type=int, default=8000, help="HTTP port (default: 8000)")
+    parser.add_argument("--port", type=int, help="HTTP port (default: 8000 local, 8001 server)")
     args = parser.parse_args()
+    if args.port is None:
+        args.port = 8001 if args.mode == "server" else 8000
     if not 1 <= args.port <= 65535:
         parser.error("port must be between 1 and 65535")
-    service = ScanService()
+    service = None
     try:
-        server = ScannerHTTPServer((args.host, args.port), service)
-    except OSError as exc:
+        if args.mode == "server":
+            from registry import Registry, load_config
+            if not args.config:
+                parser.error("--config is required in server mode")
+            server = ScannerHTTPServer((args.host, args.port), registry=Registry(load_config(args.config)))
+        else:
+            service = ScanService()
+            server = ScannerHTTPServer((args.host, args.port), service)
+    except (OSError, ValueError) as exc:
         parser.exit(1, f"Cannot start the web server: {exc}\n")
     display_host = "<Pi IP address>" if args.host == "0.0.0.0" else args.host
     print(f"Open http://{display_host}:{args.port} in your browser. Press Ctrl+C to stop.", flush=True)
@@ -256,10 +316,11 @@ def main():
     try:
         server.serve_forever(poll_interval=0.25)
     except KeyboardInterrupt:
-        print("\nStopping the web server and Bluetooth discovery...", file=sys.stderr)
+        print("\nStopping the web server...", file=sys.stderr)
     finally:
         # Reject new scans before waiting for cleanup and closing HTTP sockets.
-        service.close()
+        if service is not None:
+            service.close()
         server.server_close()
         signal.signal(signal.SIGTERM, previous_term_handler)
     return 0

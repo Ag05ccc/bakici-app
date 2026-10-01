@@ -26,12 +26,22 @@ Repeatable demo commands are in T1 of [test-plan.md](test-plan.md). No baseline 
 
 Repeat: `.venv/bin/python scan_wifi.py --timeout 15 --json`. See T2 for individual failure checks.
 
+## Stage 3 — Receiving server and sample reports
+
+- Added a validated, thread-safe in-memory registry and explicit `web_app.py --mode server`; local Bluetooth GUI mode remains available.
+- Added nine-node example configuration, a step-by-step sample sender, and [report protocol](docs/report-protocol.md).
+- PASS: 35 registry, receiver, and helper tests under `python3 -S -W error` (site packages disabled), including fresh/error/empty semantics, authentication, malformed/oversized requests, concurrent senders, and slow-body isolation.
+- PASS: a separate server process with site packages disabled accepted all five sample steps; nine configured nodes appeared with the expected Bluetooth zero and retained Wi-Fi error result. SIGTERM closed the server cleanly.
+- PASS: existing local GUI tests after moving scanner imports into local mode.
+
+Repeat the server/helper commands in the protocol document. No radio hardware is required for this stage's API checks.
+
 ## Remaining stages
 
 | Stage | Software work | Physical acceptance |
 | --- | --- | --- |
 | 2 — Wi-Fi | Implemented and checked on development PC | Pending Pi scan under service user |
-| 3 — Receiving server | Not yet accepted | Not required for synthetic API checks |
+| 3 — Receiving server | Implemented; 35 stdlib tests and process demo pass | Not required for synthetic API checks |
 | 4 — Reporting agent | Not started | Pending Pi end-to-end checks |
 | 5 — Failure isolation | Not started | Network/power checks pending pilot |
 | 6 — Building dashboard | Not started | Owner walkthrough pending |

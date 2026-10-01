@@ -8,7 +8,20 @@ A small Bluetooth scanner with a browser GUI and a reusable Python backend. It d
 
 The app includes a Bluetooth GUI and separate Bluetooth/Wi-Fi terminal scanners. The multi-Pi design is described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) and matching checks in [test-plan.md](test-plan.md); completed stages and pending hardware checks are recorded in [development-progress.md](development-progress.md).
 
-## Raspberry Pi setup
+## Building report server
+
+Server mode receives independent node reports and needs only standard-library Python:
+
+```bash
+cp config/server.example.json config/server.local.json
+python3 web_app.py --mode server --config config/server.local.json --host 0.0.0.0 --port 8001
+```
+
+From another terminal, send sample reports with `python3 tools/demo_reports.py --config config/server.local.json --scenario one-node`. Inspect `http://<server-IP>:8001/api/dashboard`. Use `127.0.0.1` when the browser runs on the server PC. The example keys are for demos; generate unique keys before deployment. The [report protocol](docs/report-protocol.md) documents configuration, payloads, authentication, limits, and health states.
+
+Local Bluetooth mode remains the default: `python web_app.py` (port 8000). Server mode defaults to port 8001 and has no local scan controls.
+
+## Raspberry Pi scanner setup
 
 Use **64-bit Raspberry Pi OS Lite, Bookworm or newer**. A desktop environment and browser are not needed on the Pi. The pinned `dbus-fast` release has prebuilt ARM64 wheels for the Python versions shipped with Bookworm and Trixie; 64-bit avoids needing a compiler for that dependency. A 32-bit OS is not the recommended minimal-install path.
 
