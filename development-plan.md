@@ -2,7 +2,7 @@
 
 Architecture: [system-plan.md](system-plan.md). Verification: [test-plan.md](test-plan.md).
 
-This is a plan, not authorization to implement every stage at once. Work on **one stage at a time**, demonstrate it, and wait for the project owner's approval before starting the next stage. Fix failures within the current stage first. Writing these documents does not start Stage 1.
+Execution update: the owner has authorized proceeding through every stage on branch `development/building-radio-system`, choosing simple defaults without further questions. Preserve the stage boundaries, tests, demonstrations, and separate commits below. Record unavailable physical-Pi checks as NOT RUN while continuing software development. See [development-progress.md](development-progress.md) for evidence and remaining work.
 
 ## How each stage works
 
@@ -11,7 +11,7 @@ This is a plan, not authorization to implement every stage at once. Work on **on
 3. Run its tests and the relevant regression tests from the test plan.
 4. Give the owner exact commands to repeat the demo, expected output, changed files, and known limitations.
 5. Record the results in the stage review log below. Separate automated, simulated, and physical-device results; an unperformed test is not a pass.
-6. Stop for review. Start the next stage only when the owner approves it. If hardware is unavailable, record the missing checks and obtain explicit approval to proceed with those checks pending.
+6. Record the checkpoint and push the stage commit before proceeding under the owner's standing authorization. Hardware checks that cannot run remain explicitly pending, rather than being counted as passes.
 
 Keep each stage as a small, separately reviewable Git change. Avoid mixing unrelated cleanup or later-stage features into it. Changes to the architecture or dependencies must be explained at the stage review.
 

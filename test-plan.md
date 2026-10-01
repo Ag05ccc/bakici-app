@@ -2,7 +2,7 @@
 
 Use with [development-plan.md](development-plan.md). Stage numbers T1–T8 match development stages 1–8. Behaviour comes from [system-plan.md](system-plan.md).
 
-This document defines future checks; it does not report that they have passed. A stage is ready for review when its required checks pass and the owner can repeat its demo. Stop on failures. Record missing hardware checks as **NOT RUN**, and obtain the owner's approval before proceeding with an incomplete gate.
+This document defines checks; it does not report that they have passed. Results are recorded in [development-progress.md](development-progress.md). Fix software failures before continuing. The owner has authorized proceeding through the stages without further questions; unavailable physical hardware checks remain **NOT RUN** and do not become passes through simulation.
 
 ## Test approach and evidence
 
