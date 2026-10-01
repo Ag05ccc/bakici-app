@@ -21,6 +21,8 @@ From another terminal, send sample reports with `python3 tools/demo_reports.py -
 
 Local Bluetooth mode remains the default: `python web_app.py` (port 8000). Server mode defaults to port 8001 and has no local scan controls.
 
+Run a node with `.venv/bin/python agent.py --config config/agent.local.json` after copying and editing `config/agent.example.json`. Match its ID/key to the server registry and set the server's actual URL. The [agent guide](docs/agent.md) describes schedules, adapter/interface selection, shutdown, and failure handling.
+
 ## Raspberry Pi scanner setup
 
 Use **64-bit Raspberry Pi OS Lite, Bookworm or newer**. A desktop environment and browser are not needed on the Pi. The pinned `dbus-fast` release has prebuilt ARM64 wheels for the Python versions shipped with Bookworm and Trixie; 64-bit avoids needing a compiler for that dependency. A 32-bit OS is not the recommended minimal-install path.

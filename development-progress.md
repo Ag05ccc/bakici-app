@@ -36,13 +36,21 @@ Repeat: `.venv/bin/python scan_wifi.py --timeout 15 --json`. See T2 for individu
 
 Repeat the server/helper commands in the protocol document. No radio hardware is required for this stage's API checks.
 
+## Stage 4 — One reporting agent
+
+- Added independent radio/heartbeat loops, bounded upload workers, strict configuration, and optional Bluetooth adapter selection. See [agent guide](docs/agent.md).
+- PASS: 19 agent tests without site packages, including real local HTTP delivery, scheduling, both directions of radio failure, missing dependency isolation, bounded uploads, no backlog, delayed DNS, and shutdown.
+- PASS: 25 Bluetooth tests including explicit adapter selection and no silent fallback for a missing/off configured adapter.
+- PASS: a live agent and separate server process on Ubuntu produced an online node, fresh Bluetooth (4 observations) and Wi-Fi (18 APs), plus heartbeat state. SIGTERM stopped the agent with exit 0. Raw discovery data was not committed.
+- NOT RUN: the same path on Raspberry Pi hardware or its service account.
+
 ## Remaining stages
 
 | Stage | Software work | Physical acceptance |
 | --- | --- | --- |
 | 2 — Wi-Fi | Implemented and checked on development PC | Pending Pi scan under service user |
 | 3 — Receiving server | Implemented; 35 stdlib tests and process demo pass | Not required for synthetic API checks |
-| 4 — Reporting agent | Not started | Pending Pi end-to-end checks |
+| 4 — Reporting agent | Implemented; simulated and live desktop end-to-end checks pass | Pending Pi end-to-end checks |
 | 5 — Failure isolation | Not started | Network/power checks pending pilot |
 | 6 — Building dashboard | Not started | Owner walkthrough pending |
 | 7 — Two-Pi pilot | Not started | NOT RUN — physical Pis/access unavailable |

@@ -107,8 +107,12 @@ def signal_sort_key(record):
     return (rssi is None, -rssi if rssi is not None else 0, properties.get("Address") or record["path"])
 
 
-def select_adapter(objects):
+def select_adapter(objects, adapter=None):
     adapters = sorted(path for path, interfaces in objects.items() if ADAPTER in interfaces)
+    if adapter is not None:
+        adapters = [path for path in adapters if adapter in (path, path.rsplit("/", 1)[-1])]
+        if not adapters:
+            raise ScanError(f"Configured Bluetooth adapter {adapter!r} was not found.")
     if not adapters:
         raise ScanError("No Bluetooth adapter found. Connect or enable a Bluetooth adapter.")
     for path in adapters:
@@ -142,7 +146,7 @@ async def dbus_call(bus, destination, path, interface, member, signature="", bod
     return reply.body
 
 
-async def scan(timeout, stop_event=None, *, bus_factory=MessageBus, on_update=None, on_status=None):
+async def scan(timeout, stop_event=None, *, adapter=None, bus_factory=MessageBus, on_update=None, on_status=None):
     """Run one discovery session; a stop event returns collected results early.
 
     Optional synchronous callbacks receive a device record or status string on
@@ -218,7 +222,7 @@ async def scan(timeout, stop_event=None, *, bus_factory=MessageBus, on_update=No
         ):
             await dbus_call(bus, DBUS, DBUS_PATH, DBUS, "AddMatch", "s", [rule])
         objects = (await dbus_call(bus, BLUEZ, "/", OBJECT_MANAGER, "GetManagedObjects"))[0]
-        adapter_path = select_adapter(objects)
+        adapter_path = select_adapter(objects, adapter)
         collector = DeviceCollector(adapter_path, objects)
         for message in pending:
             handle_signal(message)
@@ -330,7 +334,7 @@ async def run(args):
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, stop_event.set)
     try:
-        records = await scan(args.timeout, stop_event, on_status=lambda message: print(message, file=sys.stderr))
+        records = await scan(args.timeout, stop_event, adapter=getattr(args, "adapter", None), on_status=lambda message: print(message, file=sys.stderr))
         print(format_results(records, args.json))
         if stop_event.is_set():
             print("Scan interrupted; collected results are shown above.", file=sys.stderr)
@@ -347,6 +351,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--timeout", type=positive_timeout, default=15.0, metavar="SECONDS", help="scan duration (default: 15)")
     parser.add_argument("--json", action="store_true", help="print JSON instead of a table and details")
+    parser.add_argument("--adapter", help="Bluetooth adapter name (for example hci0) or BlueZ object path")
     args = parser.parse_args()
     if sys.platform != "linux":
         parser.exit(1, "This scanner requires Linux with BlueZ.\n")

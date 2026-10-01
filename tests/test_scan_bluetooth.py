@@ -365,6 +365,16 @@ class ScanTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ArgumentAndOutputTests(unittest.TestCase):
+    def test_configured_adapter_selection_and_no_silent_fallback(self):
+        objects = {"/org/bluez/hci0": adapter(), "/org/bluez/hci1": adapter()}
+        self.assertEqual(scan_bluetooth.select_adapter(objects, "hci1"), "/org/bluez/hci1")
+        self.assertEqual(scan_bluetooth.select_adapter(objects, "/org/bluez/hci0"), "/org/bluez/hci0")
+        with self.assertRaisesRegex(scan_bluetooth.ScanError, "not found"):
+            scan_bluetooth.select_adapter(objects, "hci9")
+        objects["/org/bluez/hci1"] = adapter(powered=False)
+        with self.assertRaisesRegex(scan_bluetooth.ScanError, "off or blocked"):
+            scan_bluetooth.select_adapter(objects, "hci1")
+
     def test_invalid_timeouts(self):
         for value in ["0", "-1", "nan", "inf", "-inf", "bad", "1e999"]:
             with self.subTest(value=value), self.assertRaises(argparse.ArgumentTypeError):

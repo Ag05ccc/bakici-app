@@ -1,0 +1,9 @@
+{
+  "node_id": "pi-01",
+  "api_key": "example-only-pi-01-change-me",
+  "server_url": "http://127.0.0.1:8001",
+  "enabled_radios": ["bluetooth", "wifi"],
+  "bluetooth": {"timeout": 15, "pause": 5, "adapter": null},
+  "wifi": {"timeout": 15, "interval": 60, "interface": null},
+  "heartbeat_interval": 20
+}
