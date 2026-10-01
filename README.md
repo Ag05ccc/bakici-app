@@ -8,6 +8,8 @@ A lightweight scanner and browser dashboard for a building with multiple Raspber
 
 The app includes a Bluetooth GUI and separate Bluetooth/Wi-Fi terminal scanners. The multi-Pi design is described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) and matching checks in [test-plan.md](test-plan.md); completed stages and pending hardware checks are recorded in [development-progress.md](development-progress.md).
 
+The next interface improvements are staged in [ui-ux-plan.md](ui-ux-plan.md): search and filtering, organized observation details, floor navigation, and readability. Each stage has its own review demo and validation checklist.
+
 ## Building report server
 
 Server mode receives independent node reports and needs only standard-library Python:
