@@ -6,5 +6,6 @@ __pycache__/
 !.env.example
 *.local.json
 *.log
+deployment.local/
 devices.json
 bluetooth-devices.json

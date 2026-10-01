@@ -1,0 +1,7 @@
+// Optional site policy: install only if scans as the radio user are denied.
+polkit.addRule(function(action, subject) {
+    if (action.id === "org.freedesktop.NetworkManager.wifi.scan" &&
+        subject.user === "radio") {
+        return polkit.Result.YES;
+    }
+});

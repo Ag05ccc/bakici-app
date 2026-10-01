@@ -1,0 +1,27 @@
+[Unit]
+Description=Building Bluetooth and Wi-Fi scanner node
+Wants=network-online.target
+After=network-online.target bluetooth.service NetworkManager.service
+
+[Service]
+Type=simple
+User=radio
+Group=radio
+WorkingDirectory=/opt/bakici-app
+ExecStart=/opt/bakici-app/.venv/bin/python -u /opt/bakici-app/agent.py --config /etc/bakici/agent.json
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=25
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+Environment=PYTHONDONTWRITEBYTECODE=1
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bakici-agent
+
+[Install]
+WantedBy=multi-user.target

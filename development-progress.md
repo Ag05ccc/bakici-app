@@ -66,6 +66,15 @@ Repeat: `python3 -S -W error -m unittest discover -s tests -p 'test_system.py' -
 
 Repeat: `node tools/check_browser.mjs` on a development PC with Node and Chrome. No Node/Chrome installation is required on the Pi.
 
+## Stage 7 — Deployment preparation; physical pilot pending
+
+- Added separate nonroot agent/server systemd units with boot startup, restart-on-failure, and bounded shutdown; optional narrowly scoped NetworkManager scan authorization and journal caps.
+- Added private matching configuration generation, installation/permission instructions, a physical evidence checklist, and repeatable 30/60-minute monitoring. See [deployment guide](docs/deployment.md).
+- PASS: 7 configuration-generator tests with site packages disabled, covering unique matching keys, 0700/0600 permissions, no overwrite, safe failures, and no secret output.
+- PASS: 13 monitoring tests, including two-node selection from a nine-node layout, failure/recovery reporting, process CPU/RSS, malformed responses, privacy-safe output, and Ctrl+C summaries.
+- PASS: server unit verification with `systemd-analyze verify`. Agent unit syntax verified with a temporary copy substituting the local Python path; its production `/opt/bakici-app/.venv/bin/python` is not installed on this PC.
+- NOT RUN: actual Pi installation, service-account scan permissions, service crash/intentional-stop/reboot tests, Wi-Fi uplink coexistence, rollback, and the 30-minute two-Pi run. No accounts, services, or network settings were changed on the development PC.
+
 ## Remaining stages
 
 | Stage | Software work | Physical acceptance |
@@ -75,5 +84,5 @@ Repeat: `node tools/check_browser.mjs` on a development PC with Node and Chrome.
 | 4 — Reporting agent | Implemented; simulated and live desktop end-to-end checks pass | Pending Pi end-to-end checks |
 | 5 — Failure isolation | 46 registry/agent/system tests pass | Network/power checks pending pilot |
 | 6 — Building dashboard | Implemented; real browser/synthetic nine-node checks pass | Owner walkthrough and physical nodes pending |
-| 7 — Two-Pi pilot | Not started | NOT RUN — physical Pis/access unavailable |
+| 7 — Two-Pi pilot | Deployment/configuration/monitoring artifacts prepared and tested | NOT RUN — physical Pis/access unavailable |
 | 8 — Nine-Pi deployment | Not started | NOT RUN — physical Pis/access unavailable |
