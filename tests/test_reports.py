@@ -107,6 +107,13 @@ class ReportHTTPTests(unittest.TestCase):
         for path in ("/api/scan", "/api/stop"):
             self.assertEqual(self.request("POST", path, "{}", headers)[0], 404)
 
+    def test_building_assets_are_separate_from_local_scan_controls(self):
+        for path, expected in (("/", b"Building dashboard"), ("/building.js", b"/api/dashboard"), ("/building.css", b".node-marker")):
+            status, body = self.request("GET", path)
+            self.assertEqual(status, 200)
+            self.assertIn(expected, body)
+        self.assertEqual(self.request("GET", "/app.js")[0], 404)
+
     def test_slow_sender_does_not_block_good_sender(self):
         sock = socket.create_connection(self.server.server_address, timeout=2)
         self.addCleanup(sock.close)

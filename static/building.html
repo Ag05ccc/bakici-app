@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Nearby · Building dashboard</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/building.css">
+  <script src="/building.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 21V3h14v18M2 21h20M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2M10 21v-3h4v3"/></svg></span><div><span class="brand-name">Nearby</span><span class="brand-caption">Building dashboard</span></div></div>
+      <span id="connection" class="connection" role="status">Connecting</span>
+    </header>
+
+    <main>
+      <div class="page-heading"><div><p class="eyebrow">A view across your building</p><h1>Every floor. One place.</h1><p>Explore the devices and networks your Raspberry Pis can see.</p></div><div class="live-label"><span aria-hidden="true">↻</span> Automatic updates</div></div>
+      <p id="connection-banner" class="connection-banner" role="alert" hidden></p>
+
+      <section class="toolbar card" aria-label="Dashboard controls">
+        <div class="radio-switch" role="group" aria-label="Observation type">
+          <button id="radio-bluetooth" class="radio-button active" type="button" aria-pressed="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 7 10 10-5 4V3l5 4L7 17"/></svg>Bluetooth</button>
+          <button id="radio-wifi" class="radio-button" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0m-9 4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".8" fill="currentColor"/></svg>Wi-Fi</button>
+        </div>
+        <div class="stat"><strong id="online-count">—</strong><span>Pis online</span></div>
+        <div class="stat"><strong id="observation-count">—</strong><span id="observation-unit">Current devices</span></div>
+        <button class="button" id="export-button" type="button" disabled>Export view <span aria-hidden="true">↗</span></button>
+      </section>
+
+      <div class="workspace">
+        <section class="building card" aria-labelledby="building-title">
+          <div class="panel-heading"><div><h2 id="building-title">Your building</h2><p>Choose a Pi to see its observations</p></div><span class="chip">3 floors</span></div>
+          <div id="floors" class="floors"><p class="loading-message">Waiting for the building layout…</p></div>
+          <div class="legend"><span><i class="dot fresh"></i>Fresh</span><span><i class="dot stale"></i>Stale / error</span><span><i class="dot offline"></i>Offline / waiting</span></div>
+          <p class="building-note">Markers show configured Pi locations. Counts follow the selected radio.</p>
+        </section>
+
+        <section class="observations card" aria-labelledby="scope-title">
+          <div class="scope-heading"><div><p class="eyebrow" id="scope-caption">Across all reporting Pis</p><h2 id="scope-title">All observations</h2></div><button id="all-observations" class="button active" type="button" aria-pressed="true">All observations</button></div>
+          <div id="node-details" class="node-details" hidden>
+            <dl class="node-meta"><div><dt>Location</dt><dd id="node-location"></dd></div><div><dt>Reporting IP</dt><dd id="node-ip"></dd></div><div><dt>Last heartbeat</dt><dd id="node-heartbeat"></dd></div><div><dt>Last contact</dt><dd id="node-contact"></dd></div></dl>
+            <div id="radio-health" class="radio-health"></div>
+          </div>
+          <div class="results-heading"><span id="results-summary">Waiting for reports</span><span id="results-context">Fresh results only</span></div>
+          <div class="table-scroll"><table><caption class="sr-only">Select an observation to inspect all available properties and each reporting Pi's measurements.</caption><thead><tr><th scope="col" id="name-heading">Device</th><th scope="col" id="address-heading">Address</th><th scope="col">Reported by / signal</th></tr></thead><tbody id="observations-body"></tbody></table></div>
+          <div id="empty-state" class="empty-state"><span aria-hidden="true">◎</span><h3 id="empty-title">Waiting for your first observations</h3><p id="empty-description">Results appear automatically as the Pis report.</p></div>
+          <div class="detail-panel" aria-labelledby="details-title"><div class="detail-heading"><h3 id="details-title">Observation details</h3><span id="detail-state">No selection</span></div><p id="details-empty">Select an observation above to see everything it shares.</p><div id="properties" hidden></div></div>
+        </section>
+      </div>
+      <p class="footnote" id="radio-note">Bluetooth shows discovery observations, including Classic and BLE. Signal strength is in dBm and does not measure distance.</p>
+    </main>
+    <footer><span>Nearby · Local network discovery</span><span id="last-updated">Awaiting server response</span></footer>
+  </div>
+
+  <template id="floor-template">
+    <section class="floor"><div class="floor-heading"><h3></h3><span class="floor-status"></span></div><div class="floor-canvas"><svg class="floor-plan" viewBox="0 0 600 160" preserveAspectRatio="none" fill="none" aria-hidden="true"><rect x="6" y="6" width="588" height="148" rx="8"/><path d="M202 6v49m0 49v50M398 6v49m0 49v50M6 80h65m43 0h45m84 0h114m84 0h45m43 0h65"/><path class="door" d="M202 55a49 49 0 0 1 49 49h-49m196-49a49 49 0 0 0-49 49h49"/><path class="window" d="M56 6h90m108 0h90m108 0h90M56 154h90m108 0h90m108 0h90"/></svg><div class="marker-layer"></div></div></section>
+  </template>
+</body>
+</html>

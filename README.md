@@ -1,10 +1,10 @@
-# Bluetooth scanner
+# Building Bluetooth and Wi-Fi scanner
 
-A small Bluetooth scanner with a browser GUI and a reusable Python backend. It discovers Bluetooth Classic and BLE devices through Linux BlueZ, without connecting or pairing. The browser can run on another computer or phone while the scanner runs on a headless Raspberry Pi 4.
+A lightweight scanner and browser dashboard for a building with multiple Raspberry Pis. Each node discovers Bluetooth Classic/BLE devices and nearby Wi-Fi access points, then sends its results to one server. Open the three-floor dashboard from your PC while the Pis run headlessly. Standalone scanners and the original local Bluetooth GUI are also available.
 
-- **Backend:** `scan_bluetooth.py` handles Bluetooth; `web_app.py` serves the page and a small JSON API using Python's built-in `http.server`.
-- **Frontend:** plain HTML, CSS, and JavaScript in `static/`. No build step, external fonts, CDN, or JavaScript packages. The three frontend files total about 21 KB uncompressed.
-- **Dependencies:** Python 3.11+, the system BlueZ service, and **one pip package: `dbus-fast`**. The GUI introduces no additional pip dependencies.
+- **Backend:** separate `scan_bluetooth.py` and `scan_wifi.py` modules; `agent.py` reports results; `registry.py` tracks recent state; `web_app.py` serves the API and pages using Python's built-in HTTP server.
+- **Frontend:** plain HTML, CSS, and JavaScript in `static/`. No build step, external fonts, CDN, or JavaScript packages. The building frontend is about 39 KB uncompressed; the local Bluetooth frontend is about 21 KB.
+- **Dependencies:** Python 3.11+. Scanner nodes use OS-provided BlueZ/NetworkManager and **one pip package: `dbus-fast`**. Server-only operation needs only standard-library Python.
 
 The app includes a Bluetooth GUI and separate Bluetooth/Wi-Fi terminal scanners. The multi-Pi design is described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) and matching checks in [test-plan.md](test-plan.md); completed stages and pending hardware checks are recorded in [development-progress.md](development-progress.md).
 
@@ -17,7 +17,7 @@ cp config/server.example.json config/server.local.json
 python3 web_app.py --mode server --config config/server.local.json --host 0.0.0.0 --port 8001
 ```
 
-From another terminal, send sample reports with `python3 tools/demo_reports.py --config config/server.local.json --scenario one-node`. Inspect `http://<server-IP>:8001/api/dashboard`. Use `127.0.0.1` when the browser runs on the server PC. The example keys are for demos; generate unique keys before deployment. The [report protocol](docs/report-protocol.md) documents configuration, payloads, authentication, limits, and health states.
+Open `http://<server-IP>:8001/` for the building dashboard, or `/api/dashboard` for raw JSON. Use `127.0.0.1` when the browser runs on the server PC. From another terminal, send synthetic reports with `python3 tools/demo_reports.py --config config/server.local.json --scenario nine-nodes`. The [dashboard guide](docs/dashboard.md) explains counts, selection, export, and repeatable failure demonstrations. Example keys are for demos; generate unique keys before deployment. The [report protocol](docs/report-protocol.md) documents configuration, payloads, authentication, limits, and health states.
 
 Local Bluetooth mode remains the default: `python web_app.py` (port 8000). Server mode defaults to port 8001 and has no local scan controls.
 
@@ -129,6 +129,8 @@ python -m unittest discover -s tests -v
 The automated tests use simulated D-Bus responses and need no Bluetooth hardware. For a hardware check, scan with a known BLE advertiser and a known discoverable Classic device nearby. Confirm both addresses appear, repeat with `--json`, and interrupt a longer scan with Ctrl+C. A nearby phone is not a dependable test device unless it is known to be advertising.
 
 The web tests also cover live updates, duplicate scan prevention, Stop during startup, partial results on failure, HTTP validation, and server shutdown. To check the UI manually, start the web server, scan, select a row, export JSON, stop early, and repeat from a narrow browser window.
+
+The registry, receiving server, agent, and integration tests use synthetic reports and standard-library HTTP. They cover independent radio failures, freshness, node/server outages, and recovery. An optional real-browser check on a development PC with Node.js and Chrome already installed is `node tools/check_browser.mjs`; it uses no npm packages and starts only temporary local servers. Neither Node nor Chrome is needed on a Pi.
 
 ## Backend interface
 

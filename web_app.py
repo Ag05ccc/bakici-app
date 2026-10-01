@@ -21,6 +21,11 @@ STATIC_FILES = {
     "/app.js": ("app.js", "text/javascript; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
 }
+BUILDING_STATIC_FILES = {
+    "/": ("building.html", "text/html; charset=utf-8"),
+    "/building.js": ("building.js", "text/javascript; charset=utf-8"),
+    "/building.css": ("building.css", "text/css; charset=utf-8"),
+}
 
 
 def scan_duration(value):
@@ -189,15 +194,17 @@ class ScannerHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        files = STATIC_FILES
         if self.server.registry is not None:
-            if path in {"/", "/api/dashboard"}:
+            files = BUILDING_STATIC_FILES
+            if path == "/api/dashboard":
                 self._send(HTTPStatus.OK, self.server.registry.snapshot())
-            else:
-                self._send(HTTPStatus.NOT_FOUND, {"error": "Not found."})
+                return
         elif path == "/api/status":
             self._send(HTTPStatus.OK, self.server.service.snapshot())
-        elif path in STATIC_FILES:
-            filename, content_type = STATIC_FILES[path]
+            return
+        if path in files:
+            filename, content_type = files[path]
             try:
                 content = (STATIC_DIR / filename).read_bytes()
             except OSError:

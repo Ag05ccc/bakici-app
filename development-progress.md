@@ -54,6 +54,18 @@ Repeat the server/helper commands in the protocol document. No radio hardware is
 
 Repeat: `python3 -S -W error -m unittest discover -s tests -p 'test_system.py' -v`. Exact count assertions use synthetic records; they do not depend on changing nearby devices.
 
+## Stage 6 — Three-floor building dashboard
+
+- Added a separate building view with nine configured Pi markers, Bluetooth/Wi-Fi counts, node health, observation/property selection, fresh-only grouping, and contextual JSON export. Local Bluetooth GUI mode remains available.
+- Added the continuous nine-node demo with pause/error/empty controls. See [dashboard guide](docs/dashboard.md).
+- PASS: 11 real headless-Chrome checks through actual server/API fixtures: all markers and both radio counts, six distinct health states, shared reporters/signals, text-safe hostile names, properties and exports, 390px mobile layout, browser disconnection/recovery, local GUI readiness, and no JavaScript exceptions or external asset requests.
+- PASS: desktop and mobile screenshots visually inspected; three floors remain legible and all markers are reachable.
+- PASS: 11 report-demo tests and server asset routing regression. Building JavaScript syntax check passes. Frontend assets total 39,048 bytes without a build step or external libraries.
+- PASS: all 126 tests through Stage 6 with warnings treated as errors. A timing assumption in the restart test was corrected to distinguish an in-flight report from replay; the three fault-integration tests then passed ten consecutive runs.
+- NOT RUN: owner-operated walkthrough and actual nine-Pi data; browser checks used deterministic synthetic observations.
+
+Repeat: `node tools/check_browser.mjs` on a development PC with Node and Chrome. No Node/Chrome installation is required on the Pi.
+
 ## Remaining stages
 
 | Stage | Software work | Physical acceptance |
@@ -62,6 +74,6 @@ Repeat: `python3 -S -W error -m unittest discover -s tests -p 'test_system.py' -
 | 3 — Receiving server | Implemented; 35 stdlib tests and process demo pass | Not required for synthetic API checks |
 | 4 — Reporting agent | Implemented; simulated and live desktop end-to-end checks pass | Pending Pi end-to-end checks |
 | 5 — Failure isolation | 46 registry/agent/system tests pass | Network/power checks pending pilot |
-| 6 — Building dashboard | Not started | Owner walkthrough pending |
+| 6 — Building dashboard | Implemented; real browser/synthetic nine-node checks pass | Owner walkthrough and physical nodes pending |
 | 7 — Two-Pi pilot | Not started | NOT RUN — physical Pis/access unavailable |
 | 8 — Nine-Pi deployment | Not started | NOT RUN — physical Pis/access unavailable |
