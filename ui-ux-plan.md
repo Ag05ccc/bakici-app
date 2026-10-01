@@ -257,6 +257,36 @@ Interaction:
 | 7–9, 16 | UX-3 |
 | 17 | With the UX-1 export change, or later |
 
+### [opus] Trial implementation on `development/ui-ux-opus`
+
+At the owner's request, all 17 proposals were implemented together on a separate branch, so they can be reviewed in the browser and kept or discarded as a whole. This trial does not change the stage-status table in section 9.
+
+- **Prerequisites pulled forward:** search, explicit sort, stable rows and filtered JSON export from UX-1, and floor scope and the attention list from UX-3. Items 8, 12, 13, 14 and 16 depend on them.
+- **Codex boundaries followed:**
+  - `Server connected · Dashboard received 2s ago` wording.
+  - Text kept beside every state icon.
+  - Distinct-Pi reporter counts, with Unknown signal never shown as zero.
+  - Identity fields shown once only when every report supplies the same value.
+  - Retained results labelled with a banner and background, not reduced opacity.
+  - Separate online and attention counts on a real button.
+  - `Clear Pi selection` as the breadcrumb close name.
+  - New-row count reset on any explicit sort or scope change.
+  - No history entry per keystroke, and a removed observation is never restored from the URL.
+  - Shortcuts ignore inputs, modifiers and text composition.
+  - Spreadsheet-safe CSV.
+- **Departures from Codex's advice, for the owner to judge:**
+  - Everything shipped in one branch rather than staged.
+  - URL state, keyboard shortcuts and CSV were done now rather than deferred. Arrow keys act only when a row has focus.
+  - Light and dark themes were added, which section 10 had deferred.
+- **Visual direction:** taken from the Acrylic Wi-Fi Analyzer site as a reference for style only:
+  - Helvetica-style system font stack and capitalised section labels.
+  - Teal accent on slate neutrals, with a navy top bar.
+  - A horizontal signal meter.
+  - Channel, band and security shown as secondary text in Wi-Fi rows.
+
+  No web fonts or external assets were added. Its feature set (signal-history graphs, channel spectrum charts, vendor lookup) was not copied, because history would require keeping detections that section 4 rules out.
+- **Evidence:** see the "Experimental branch" entry in [development-progress.md](development-progress.md). The building frontend grew from about 39 KB to about 100 KB uncompressed.
+
 ## 12. [codex] Feedback on Opus's review
 
 Reviewed 2026-10-01 against the current building assets and registry. Opus's original comments above are preserved. This section adds recommendations and implementation boundaries; it does not mark any proposed UI change as implemented or alter the stage-status table.

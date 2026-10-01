@@ -92,6 +92,15 @@ Detailed coverage: [acceptance-results.md](docs/acceptance-results.md). Keep the
 - PASS: browser harness JavaScript syntax check. No production code changed or radio scans were needed for these additional checks.
 - Physical Pi deployment and the owner's hardware walkthrough remain NOT RUN.
 
+## Experimental branch — Opus UI proposals
+
+Branch `development/ui-ux-opus`, kept separate from the staged plan so the owner can keep or discard it. It implements all 17 proposals in [ui-ux-plan.md](ui-ux-plan.md) section 11 at once, plus a visual restyle that uses the Acrylic Wi-Fi Analyzer site only as a reference for type, colour and styling.
+
+- PASS: `node tools/check_browser.mjs` — 25 checks (15 existing, 10 new) covering 12px minimum text, search, floor scope, breadcrumb, attention list, linked map, new-row marker with focus retained, URL state, keyboard shortcuts, CSV formula safety, theme switch, mobile overview and disconnection.
+- PASS: `.venv/bin/python -m unittest discover -s tests` — 146 tests; `node --check` for both scripts; `git diff --check`.
+- PASS: computed contrast for every text/background token pair is at least 4.5:1, and graphics at least 3:1, in both themes.
+- NOT RUN: owner walkthrough, screen-reader test and 500-row responsiveness check from UX-4; physical Pi deployment remains a separate pending workstream.
+
 ## Stage status
 
 | Stage | Software work | Physical acceptance |

@@ -3,7 +3,7 @@
 A lightweight scanner and browser dashboard for a building with multiple Raspberry Pis. Each node discovers Bluetooth Classic/BLE devices and nearby Wi-Fi access points, then sends its results to one server. Open the three-floor dashboard from your PC while the Pis run headlessly. Standalone scanners and the original local Bluetooth GUI are also available.
 
 - **Backend:** separate `scan_bluetooth.py` and `scan_wifi.py` modules; `agent.py` reports results; `registry.py` tracks recent state; `web_app.py` serves the API and pages using Python's built-in HTTP server.
-- **Frontend:** plain HTML, CSS, and JavaScript in `static/`. No build step, external fonts, CDN, or JavaScript packages. The building frontend is about 39 KB uncompressed; the local Bluetooth frontend is about 21 KB.
+- **Frontend:** plain HTML, CSS, and JavaScript in `static/`. No build step, external fonts, CDN, or JavaScript packages. The building frontend is about 100 KB uncompressed; the local Bluetooth frontend is about 21 KB.
 - **Dependencies:** Python 3.11+. Scanner nodes use OS-provided BlueZ/NetworkManager and **one pip package: `dbus-fast`**. Server-only operation needs only standard-library Python.
 
 The app includes a Bluetooth GUI and separate Bluetooth/Wi-Fi terminal scanners. The multi-Pi design is described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) and matching checks in [test-plan.md](test-plan.md); completed stages and pending hardware checks are recorded in [development-progress.md](development-progress.md).
