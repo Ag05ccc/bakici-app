@@ -32,6 +32,7 @@ class SystemFailureTests(unittest.IsolatedAsyncioTestCase):
         self.server = None
         self.thread = None
         self.running_agents = []
+        self.agents = []
         self.start_server()
 
     def start_server(self, port=0):
@@ -55,7 +56,9 @@ class SystemFailureTests(unittest.IsolatedAsyncioTestCase):
             "wifi": {"timeout": .1, "interval": .04}, "heartbeat_interval": .03,
         })
         stop = asyncio.Event()
-        task = asyncio.create_task(Agent(config, scanners=scanners).run(stop))
+        agent = Agent(config, scanners=scanners)
+        self.agents.append(agent)
+        task = asyncio.create_task(agent.run(stop))
         self.running_agents.append((stop, task))
         return stop, task
 
@@ -92,9 +95,12 @@ class SystemFailureTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_server_outage_restart_discards_old_results_and_recovers(self):
         sequences = {"bluetooth": 0, "wifi": 0}
+        scan_allowed = asyncio.Event()
+        scan_allowed.set()
 
         def scanner(radio):
             async def scan(*args, **kwargs):
+                await scan_allowed.wait()
                 sequences[radio] += 1
                 return [{"path": f"/{radio}/sensor", "properties": {"Sequence": sequences[radio]}}]
             return scan
@@ -107,11 +113,16 @@ class SystemFailureTests(unittest.IsolatedAsyncioTestCase):
         self.stop_server()
         with self.assertLogs("radio-agent", level="WARNING"):
             await eventually(lambda: all(sequences[r] >= before[r] + 3 for r in sequences))
-            await asyncio.sleep(.03)  # Let failed localhost uploads finish.
+            # Freeze producers and drain failed requests before defining the
+            # restart boundary. A just-completed scan racing with listen() is
+            # a valid in-flight report, not evidence of an offline replay queue.
+            scan_allowed.clear()
+            await eventually(lambda: all(not self.agents[0].sender.workers[r].is_alive() for r in sequences))
         at_restart = dict(sequences)
         self.start_server(port)
         self.assertEqual(self.node(1)["state"], "waiting")
         self.assertEqual(self.node(1)["radios"]["bluetooth"]["observations"], [])
+        scan_allowed.set()
         await eventually(lambda: all(self.node(1)["radios"][r]["state"] == "fresh" for r in sequences))
         for radio in sequences:
             self.assertGreater(self.node(1)["radios"][radio]["observations"][0]["properties"]["Sequence"], at_restart[radio])
