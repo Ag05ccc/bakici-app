@@ -1,6 +1,6 @@
 # Acceptance evidence index
 
-This index maps [test-plan.md](../test-plan.md) to observed evidence. The current branch has **146 passing automated tests**, **11 passing real-browser checks**, live Ubuntu Bluetooth/Wi-Fi reporting, and a one-minute nine-node synthetic monitoring run. Full commands, counts and limitations are in [development-progress.md](../development-progress.md).
+This index maps [test-plan.md](../test-plan.md) to observed evidence. The current branch has **146 passing automated tests**, **15 passing real-browser checks**, live Ubuntu Bluetooth/Wi-Fi reporting, and a one-minute nine-node synthetic monitoring run. Full commands, counts and limitations are in [development-progress.md](../development-progress.md).
 
 PASS below means the stated software scope passed. PARTIAL and NOT RUN are not completed physical acceptance. No Raspberry Pi was available for deployment; no hardware or operator results are inferred from simulation.
 
@@ -11,7 +11,7 @@ PASS below means the stated software scope passed. PARTIAL and NOT RUN are not c
 | T1.3 | PASS | Bluetooth argument/format tests, typed/binary JSON; live JSON parse. |
 | T1.4 | PASS | Bluetooth failure, cancellation, startup/stop timeout, service loss tests; live SIGINT exit 130. |
 | T1.5 | PARTIAL | Live PC discovery worked; known BLE/Classic fixtures on a physical Pi NOT RUN. |
-| T1.6 | PARTIAL | Local service/API actions tested; real browser loads ready. Owner's full hardware GUI walkthrough NOT RUN. |
+| T1.6 | PARTIAL | Real Chrome with a synthetic scanner verifies Start, streaming/merged updates, delayed names/details, shared scans across tabs, duplicate-start rejection, Stop, partial JSON export, and clean restart. Owner's full hardware GUI walkthrough NOT RUN. |
 | T2.1 | PASS | `tests/test_scan_wifi.py`: accepted request waits, early completion and invalidation races. |
 | T2.2 | PASS | Boot-time unit conversion, stale/unknown AP filtering and boundary tests. |
 | T2.3 | PASS | BSSID deduplication, hidden/non-UTF-8 SSIDs, binary properties and unknown channel tests. |
@@ -47,7 +47,7 @@ PASS below means the stated software scope passed. PARTIAL and NOT RUN are not c
 | T6.5 | PASS | Browser network outage marks retained view outdated; reconnect restores counts. |
 | T6.6 | PASS | Hostile names/SSIDs render as text, property details/binary/Unicode render safely. |
 | T6.7 | PASS | Browser-captured node/all JSON exports match scope, health and displayed observations. |
-| T6.8 | PASS | No external asset requests or JS exceptions; local GUI readiness preserved. Hidden poll interval inspected in source. |
+| T6.8 | PASS | No external asset requests or JS exceptions; local GUI readiness and complete scan workflow verified with synthetic observations in real Chrome. Hidden poll interval inspected in source. |
 | T7.1 | NOT RUN on Pis | Install instructions, generator and units prepared; server-only desktop mode verified. |
 | T7.2 | NOT RUN | Actual Pi service-account permissions require installed hardware. |
 | T7.3 | NOT RUN | 30-minute physical dual-radio/Wi-Fi-uplink run requires two Pis. |

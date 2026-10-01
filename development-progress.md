@@ -85,6 +85,13 @@ Repeat: `node tools/check_browser.mjs` on a development PC with Node and Chrome.
 
 Detailed coverage: [acceptance-results.md](docs/acceptance-results.md). Keep the physical evidence sheet as NOT RUN until those actions are actually performed.
 
+## Follow-up — Local GUI workflow verification
+
+- Extended `tools/check_browser.mjs` to drive the existing local GUI against a temporary synthetic scanner through the actual web service.
+- PASS: all 15 real headless-Chrome checks, including Start, live updates, repeated-device merging, delayed names and selected details, two tabs sharing one scan, duplicate-start rejection, Stop with partial results, matching JSON export, and restart clearing previous results.
+- PASS: browser harness JavaScript syntax check. No production code changed or radio scans were needed for these additional checks.
+- Physical Pi deployment and the owner's hardware walkthrough remain NOT RUN.
+
 ## Stage status
 
 | Stage | Software work | Physical acceptance |

@@ -286,9 +286,141 @@ try {
   await until(async () => await evaluate(sessionId, "document.getElementById('scan-button') && !document.getElementById('scan-button').disabled"), "existing local GUI ready");
   assert((await text(sessionId, "#status")).includes("Ready"));
   pass("Existing local Bluetooth GUI loads ready without starting a hardware scan");
+
+  // The real ScanService/HTTP handler renders deterministic callback updates.
+  // File gates let the browser inspect each phase without racing scan timers.
+  const scanPort = await freePort();
+  const scanBase = `http://127.0.0.1:${scanPort}`;
+  const syntheticBackend = String.raw`
+import asyncio
+import copy
+from pathlib import Path
+import signal
+import sys
+import threading
+from web_app import ScanService, ScannerHTTPServer
+
+gates = Path(sys.argv[2])
+attempt = 0
+
+async def fake_scan(timeout, stop_event, *, on_update, on_status):
+    global attempt
+    attempt += 1
+    number = attempt
+    records = {}
+    deadline = asyncio.get_running_loop().time() + timeout
+    async def wait_gate(stage):
+        while not (gates / f"scan-{number}-{stage}").exists():
+            if stop_event.is_set() or asyncio.get_running_loop().time() >= deadline:
+                return False
+            try:
+                await asyncio.wait_for(stop_event.wait(), 0.05)
+            except TimeoutError:
+                pass
+        return not stop_event.is_set()
+    def emit(record):
+        records[record["path"]] = record
+        on_update(copy.deepcopy(record))
+    on_status(f"Synthetic scan {number}: waiting for observations")
+    if await wait_gate("first"):
+        path = f"/synthetic/scan_{number}/device_a"
+        props = {"Address": "02:00:00:00:02:01", "AddressType": "public",
+                 "RSSI": -70, "Paired": False, "Connected": False,
+                 "ManufacturerData": {"0x1234": "00ff12"}}
+        emit({"path": path, "properties": props})
+        if await wait_gate("updated"):
+            emit({"path": path, "properties": {**props, "Name": f"Delayed beacon {number}", "RSSI": -43}})
+            emit({"path": f"/synthetic/scan_{number}/device_b", "properties": {
+                "Name": f"Second beacon {number}", "Address": "02:00:00:00:02:02",
+                "RSSI": -81, "Paired": False, "Connected": False}})
+            await wait_gate("finish")
+    return list(records.values())
+
+service = ScanService(fake_scan)
+server = ScannerHTTPServer(("127.0.0.1", int(sys.argv[1])), service)
+def shutdown(signum, frame):
+    threading.Thread(target=server.shutdown, daemon=True).start()
+for signum in (signal.SIGINT, signal.SIGTERM):
+    signal.signal(signum, shutdown)
+try:
+    server.serve_forever()
+finally:
+    service.close()
+    server.server_close()
+`;
+  const synthetic = child(path.join(root, ".venv/bin/python"), ["-c", syntheticBackend, String(scanPort), temporary]);
+  await waitServer(synthetic, scanBase + "/api/status");
+  await cdp("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, sessionId);
+  await cdp("Page.navigate", { url: scanBase }, sessionId);
+  await until(async () => await evaluate(sessionId, "document.getElementById('scan-button') && !document.getElementById('scan-button').disabled"), "synthetic local GUI ready");
+  await evaluate(sessionId, "document.getElementById('duration').value = '120'");
+  await click(sessionId, "#scan-button");
+  await until(async () => await evaluate(sessionId, "!document.getElementById('stop-button').disabled && document.getElementById('scan-button').disabled"), "local scan started");
+  assert.equal(await text(sessionId, "#device-count"), "0");
+  await writeFile(path.join(temporary, "scan-1-first"), "");
+  await until(async () => await evaluate(sessionId, "document.querySelectorAll('#devices tr').length === 1"), "first streaming observation");
+  assert.equal(await text(sessionId, ".device-select"), "Unnamed device");
+  assert((await text(sessionId, "#devices")).includes("-70 dBm"));
+  await click(sessionId, ".device-select");
+  assert((await text(sessionId, "#properties")).includes("00ff12"));
+  await writeFile(path.join(temporary, "scan-1-updated"), "");
+  await until(async () => await evaluate(sessionId, "document.querySelectorAll('#devices tr').length === 2 && document.getElementById('device-name').textContent === 'Delayed beacon 1'"), "merged delayed name and second device");
+  assert((await text(sessionId, "#devices")).includes("-43 dBm"));
+  assert.equal(await evaluate(sessionId, "document.querySelectorAll('#devices tr[data-path=\"/synthetic/scan_1/device_a\"]').length"), 1);
+  assert.equal((await (await fetch(scanBase + "/api/status")).json()).scanning, true);
+  pass("Local Start streams results, merges repeated updates, and refreshes selected delayed names/details");
+
+  const { targetId: secondTarget } = await cdp("Target.createTarget", { url: "about:blank" });
+  const { sessionId: secondSession } = await cdp("Target.attachToTarget", { targetId: secondTarget, flatten: true });
+  await cdp("Runtime.enable", {}, secondSession);
+  await cdp("Network.enable", {}, secondSession);
+  await cdp("Page.enable", {}, secondSession);
+  await cdp("Page.navigate", { url: scanBase }, secondSession);
+  await until(async () => await evaluate(secondSession, "document.querySelectorAll('#devices tr').length === 2 && document.getElementById('scan-button').disabled && !document.getElementById('stop-button').disabled"), "second tab joins shared scan");
+  assert.equal(await evaluate(sessionId, "document.getElementById('scan-button').disabled"), true);
+  assert.equal(await evaluate(secondSession, `fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeout: 120 }) }).then(response => response.status)`), 409);
+  const sharedScan = await (await fetch(scanBase + "/api/status")).json();
+  assert.equal(sharedScan.scanning, true);
+  assert.equal(sharedScan.devices.length, 2);
+  assert(sharedScan.devices.every((record) => record.path.startsWith("/synthetic/scan_1/")));
+  await click(secondSession, '#devices tr[data-path="/synthetic/scan_1/device_b"] button');
+  assert.equal(await text(secondSession, "#device-name"), "Second beacon 1");
+  pass("Two local GUI tabs share one scan, block duplicate Start, and select device details independently");
+
+  await click(secondSession, "#stop-button");
+  await until(async () => await evaluate(secondSession, "!document.getElementById('scan-button').disabled && document.getElementById('stop-button').disabled"), "local scan stopped");
+  await until(async () => await evaluate(sessionId, "!document.getElementById('scan-button').disabled"), "first tab observes Stop");
+  assert.equal(await text(secondSession, "#status"), "Scan stopped.");
+  assert.equal(await text(secondSession, "#device-count"), "2");
+  const stoppedScan = await (await fetch(scanBase + "/api/status")).json();
+  assert.equal(stoppedScan.scanning, false);
+  assert.deepEqual(stoppedScan.devices, sharedScan.devices);
+  await evaluate(secondSession, `(() => { const original = URL.createObjectURL; URL.createObjectURL = function(blob) { blob.text().then(text => { window.__export = JSON.parse(text); }); return original.call(this, blob); }; })()`);
+  await click(secondSession, "#export-button");
+  await until(async () => await evaluate(secondSession, "Array.isArray(window.__export)"), "local partial-results export");
+  assert.deepEqual(await evaluate(secondSession, "window.__export"), stoppedScan.devices);
+  pass("Local Stop retains partial results in both tabs and exports matching JSON");
+
+  await click(secondSession, "#scan-button");
+  await until(async () => await evaluate(secondSession, "document.getElementById('scan-button').disabled && !document.getElementById('stop-button').disabled && document.querySelectorAll('#devices tr').length === 0"), "restart clears prior scan");
+  assert.equal(await text(secondSession, "#device-count"), "0");
+  assert.equal(await evaluate(secondSession, "document.getElementById('export-button').disabled"), true);
+  assert.equal(await evaluate(secondSession, "document.getElementById('details-content').hidden"), true);
+  const restarted = await (await fetch(scanBase + "/api/status")).json();
+  assert.equal(restarted.scanning, true);
+  assert.deepEqual(restarted.devices, []);
+  await writeFile(path.join(temporary, "scan-2-first"), "");
+  await until(async () => await evaluate(secondSession, "document.querySelectorAll('#devices tr').length === 1"), "new scan streams fresh result");
+  assert.equal(await evaluate(secondSession, "document.querySelector('#devices tr').dataset.path"), "/synthetic/scan_2/device_a");
+  await writeFile(path.join(temporary, "scan-2-updated"), "");
+  await until(async () => await evaluate(secondSession, "document.querySelectorAll('#devices tr').length === 2 && document.getElementById('devices').textContent.includes('Delayed beacon 2')"), "new scan receives delayed updates");
+  await click(secondSession, "#stop-button");
+  await until(async () => !(await (await fetch(scanBase + "/api/status")).json()).scanning, "second scan stopped");
+  pass("Local restart clears old rows/details/export and streams only the new scan's updates");
+
   assert.deepEqual(runtimeErrors, []);
   if (fixtureFailure) throw fixtureFailure;
-  assert(browserRequests.filter((url) => /^https?:/.test(url)).every((url) => url.startsWith(base + "/") || url.startsWith(localBase + "/")));
+  assert(browserRequests.filter((url) => /^https?:/.test(url)).every((url) => [base, localBase, scanBase].some((origin) => url.startsWith(origin + "/"))));
   pass("No JavaScript runtime errors or external asset requests");
   console.log(`\n${checks.length} browser checks passed. Screenshots: /tmp/nearby-building-desktop.png and /tmp/nearby-building-mobile.png`);
 } finally {
