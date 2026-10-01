@@ -6,7 +6,7 @@ A small Bluetooth scanner with a browser GUI and a reusable Python backend. It d
 - **Frontend:** plain HTML, CSS, and JavaScript in `static/`. No build step, external fonts, CDN, or JavaScript packages. The three frontend files total about 21 KB uncompressed.
 - **Dependencies:** Python 3.11+, the system BlueZ service, and **one pip package: `dbus-fast`**. The GUI introduces no additional pip dependencies.
 
-The current app scans Bluetooth on one computer or Pi. The planned multi-Pi building dashboard and Wi-Fi scanning are described in [system-plan.md](system-plan.md).
+The current app scans Bluetooth on one computer or Pi. The planned multi-Pi building dashboard and Wi-Fi scanning are described in [system-plan.md](system-plan.md). Follow [development-plan.md](development-plan.md) one stage at a time, with matching checks in [test-plan.md](test-plan.md) and an owner review before each next stage.
 
 ## Raspberry Pi setup
 
