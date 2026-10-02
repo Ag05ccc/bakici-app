@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Nearby · Bluetooth scanner</title>
+  <title>Nearby · Bluetooth tarayıcı</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
@@ -14,51 +14,51 @@
     <header class="header">
       <div class="brand">
         <span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 4V3l5 4L7 17"/></svg></span>
-        <div><span class="brand-name">Nearby</span><span class="brand-caption">Bluetooth scanner</span></div>
+        <div><span class="brand-name">Nearby</span><span class="brand-caption">Bluetooth tarayıcı</span></div>
       </div>
-      <span class="connection" id="connection">Connecting</span>
+      <span class="connection" id="connection">Bağlanıyor</span>
     </header>
 
     <main>
       <div class="page-heading">
-        <div><h1>Discover what's around.</h1><p>Scan for Bluetooth devices and explore the details they share.</p></div>
+        <div><h1>Çevrende neler var, keşfet.</h1><p>Bluetooth cihazlarını tara ve paylaştıkları ayrıntıları incele.</p></div>
         <span class="transport-label">Classic + BLE</span>
       </div>
 
-      <section class="controls card" aria-label="Scan controls">
+      <section class="controls card" aria-label="Tarama denetimleri">
         <form id="scan-form">
-          <div class="duration-field"><label for="duration">Scan duration</label><div class="duration-input"><input id="duration" name="duration" type="number" min="1" max="300" step="1" value="15" required aria-describedby="duration-help"><span>seconds</span></div><span id="duration-help" class="sr-only">Between 1 and 300 seconds</span></div>
-          <button class="button primary" id="scan-button" type="submit" disabled>Start scan</button>
-          <button class="button" id="stop-button" type="button" disabled>Stop</button>
-          <button class="button export" id="export-button" type="button" disabled>Export JSON <span aria-hidden="true">↗</span></button>
+          <div class="duration-field"><label for="duration">Tarama süresi</label><div class="duration-input"><input id="duration" name="duration" type="number" min="1" max="300" step="1" value="15" required aria-describedby="duration-help"><span>saniye</span></div><span id="duration-help" class="sr-only">1 ile 300 saniye arası</span></div>
+          <button class="button primary" id="scan-button" type="submit" disabled>Taramayı başlat</button>
+          <button class="button" id="stop-button" type="button" disabled>Durdur</button>
+          <button class="button export" id="export-button" type="button" disabled>JSON dışa aktar <span aria-hidden="true">↗</span></button>
         </form>
-        <div class="scan-status"><p id="status" role="status">Connecting to the scanner…</p><span id="scan-time"></span></div>
-        <progress id="progress" max="15" value="0" aria-label="Scan progress" hidden></progress>
+        <div class="scan-status"><p id="status" role="status">Tarayıcıya bağlanılıyor…</p><span id="scan-time"></span></div>
+        <progress id="progress" max="15" value="0" aria-label="Tarama ilerlemesi" hidden></progress>
         <p class="error" id="error" role="alert" hidden></p>
       </section>
 
       <div class="workspace">
         <section class="devices card" aria-labelledby="devices-title">
-          <div class="panel-heading"><h2 id="devices-title">Devices <span class="count" id="device-count">0</span></h2><span>Strongest signal first</span></div>
+          <div class="panel-heading"><h2 id="devices-title">Cihazlar <span class="count" id="device-count">0</span></h2><span>En güçlü sinyal önce</span></div>
           <div class="table-scroll">
             <table>
-              <caption class="sr-only">Devices discovered during the current scan. Select a device to view all its properties.</caption>
-              <thead><tr><th scope="col">Device</th><th scope="col">Address</th><th scope="col">Signal</th><th scope="col">Paired</th><th scope="col">Connected</th></tr></thead>
+              <caption class="sr-only">Bu taramada bulunan cihazlar. Tüm özelliklerini görmek için bir cihaz seçin.</caption>
+              <thead><tr><th scope="col">Cihaz</th><th scope="col">Adres</th><th scope="col">Sinyal</th><th scope="col">Eşleşmiş</th><th scope="col">Bağlı</th></tr></thead>
               <tbody id="devices"></tbody>
             </table>
           </div>
-          <div class="empty-state" id="empty-state"><span class="empty-icon" aria-hidden="true">◎</span><h3 id="empty-title">Your next discovery starts here</h3><p id="empty-description">Start a scan to find nearby Bluetooth devices.</p></div>
+          <div class="empty-state" id="empty-state"><span class="empty-icon" aria-hidden="true">◎</span><h3 id="empty-title">Bir sonraki keşfin burada başlıyor</h3><p id="empty-description">Yakındaki Bluetooth cihazlarını bulmak için bir tarama başlatın.</p></div>
         </section>
 
         <aside class="details card" aria-labelledby="details-title">
-          <div class="panel-heading"><h2 id="details-title">Device details</h2><span id="detail-label">No selection</span></div>
-          <div class="details-empty" id="details-empty"><span aria-hidden="true">↖</span><h3>A closer look</h3><p>Select a device to see its available information.</p></div>
+          <div class="panel-heading"><h2 id="details-title">Cihaz ayrıntıları</h2><span id="detail-label">Seçim yok</span></div>
+          <div class="details-empty" id="details-empty"><span aria-hidden="true">↖</span><h3>Daha yakından bakın</h3><p>Mevcut bilgilerini görmek için bir cihaz seçin.</p></div>
           <div id="details-content" hidden><div class="device-heading"><h3 id="device-name"></h3><p id="device-address"></p></div><dl id="properties"></dl></div>
         </aside>
       </div>
-      <p class="footnote">Discovery only · No connections or pairing. Some devices hide their names or stop advertising. Signal strength does not measure distance.</p>
+      <p class="footnote">Yalnızca keşif · Bağlantı veya eşleştirme yapılmaz. Bazı cihazlar adlarını gizler ya da yayın yapmayı bırakır. Sinyal gücü mesafeyi ölçmez.</p>
     </main>
-    <footer>Nearby<span>Results may include previously cached device details.</span></footer>
+    <footer>Nearby<span>Sonuçlar daha önce önbelleğe alınmış cihaz ayrıntılarını içerebilir.</span></footer>
   </div>
 </body>
 </html>

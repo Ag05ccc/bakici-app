@@ -73,7 +73,7 @@ If virtual-environment creation fails because `venv` is missing, install Ubuntu'
 .venv/bin/python web_app.py --host 0.0.0.0 --port 8080
 ```
 
-Choose a scan duration (1–300 seconds) and click **Start scan**. Devices appear as they are discovered, sorted by signal strength. Select a row to inspect all available properties. **Stop** ends the scan and keeps partial results; **Export JSON** downloads the displayed records.
+Choose a scan duration (1–300 seconds) and click **Taramayı başlat** (start scan). Devices appear as they are discovered, sorted by signal strength. Select a row to inspect all available properties. **Durdur** (stop) ends the scan and keeps partial results; **JSON dışa aktar** (export JSON) downloads the displayed records. The interface text is Turkish; the CLI and API stay in English.
 
 Only one scan runs at a time, shared across browser tabs. Each new scan clears the previous list; refreshing the page reconnects to the current scan. Errors appear in the page and preserve any results already observed. Closing a browser tab does not stop discovery; the scan finishes at its timeout. Ctrl+C or SIGTERM on the server requests a stop and waits for Bluetooth cleanup.
 

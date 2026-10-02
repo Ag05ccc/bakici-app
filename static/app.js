@@ -9,16 +9,47 @@ let actionPending = false;
 let connected = false;
 let requestVersion = 0;
 const labels = {
-  Name: "Name", Address: "Bluetooth address", AddressType: "Address type",
-  RSSI: "Signal strength (dBm)", TxPower: "Transmit power (dBm)",
-  UUIDs: "Service UUIDs", Class: "Device class", Appearance: "Appearance",
-  ManufacturerData: "Manufacturer data", ServiceData: "Service data",
-  Paired: "Paired", Connected: "Connected", ServicesResolved: "Services resolved",
+  Name: "Ad", Alias: "Takma ad", Address: "Bluetooth adresi", AddressType: "Adres türü",
+  RSSI: "Sinyal gücü (dBm)", TxPower: "Yayın gücü (dBm)",
+  UUIDs: "Servis UUID'leri", Class: "Cihaz sınıfı", Appearance: "Görünüm",
+  ManufacturerData: "Üretici verisi", ServiceData: "Servis verisi",
+  Paired: "Eşleşmiş", Connected: "Bağlı", ServicesResolved: "Servisler çözümlendi",
+  Trusted: "Güvenilir", Blocked: "Engellenmiş", Icon: "Simge",
 };
+// The server and scanner report in English; known messages are shown in Turkish, anything else as sent.
+const serverMessages = {
+  "Ready to scan.": "Taramaya hazır.",
+  "Starting discovery...": "Keşif başlatılıyor...",
+  "Stopping discovery...": "Keşif durduruluyor...",
+  "Scan stopped.": "Tarama durduruldu.",
+  "Scan complete.": "Tarama tamamlandı.",
+  "Could not start the scanner worker. Please retry.": "Tarama işlemi başlatılamadı. Lütfen yeniden deneyin.",
+  "A scan is already running or the server is closing.": "Zaten bir tarama sürüyor ya da sunucu kapanıyor.",
+  "Scan duration must be a number between 1 and 300 seconds.": "Tarama süresi 1 ile 300 saniye arasında bir sayı olmalıdır.",
+  "Scan duration must be between 1 and 300 seconds.": "Tarama süresi 1 ile 300 saniye arasında olmalıdır.",
+  "No Bluetooth adapter found. Connect or enable a Bluetooth adapter.": "Bluetooth adaptörü bulunamadı. Bir Bluetooth adaptörü bağlayın veya etkinleştirin.",
+  "Bluetooth is off or blocked. Enable the adapter in Bluetooth settings or with bluetoothctl and retry.": "Bluetooth kapalı veya engellenmiş. Adaptörü Bluetooth ayarlarından ya da bluetoothctl ile açıp yeniden deneyin.",
+  "Lost connection to the system D-Bus during the scan. Please retry.": "Tarama sırasında sistem D-Bus bağlantısı koptu. Lütfen yeniden deneyin.",
+  "Access to the system D-Bus was denied. Check your user permissions.": "Sistem D-Bus erişimi reddedildi. Kullanıcı izinlerinizi kontrol edin.",
+  "Connecting to the system D-Bus timed out.": "Sistem D-Bus bağlantısı zaman aşımına uğradı.",
+};
+const serverPatterns = [
+  [/^Scanning Classic and BLE on (\S+) for ([\d.]+) seconds\.\.\.$/, (adapter, seconds) => `${adapter} üzerinde Classic ve BLE ${seconds} saniye taranıyor...`],
+  [/^Configured Bluetooth adapter '(.+)' was not found\.$/, (adapter) => `Yapılandırılan Bluetooth adaptörü '${adapter}' bulunamadı.`],
+];
+function translate(message) {
+  if (!message) return message;
+  if (serverMessages[message]) return serverMessages[message];
+  for (const [pattern, format] of serverPatterns) {
+    const match = message.match(pattern);
+    if (match) return format(...match.slice(1));
+  }
+  return message;
+}
 
 function text(value) {
-  if (value === null || value === undefined || value === "") return "Unknown";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (value === null || value === undefined || value === "") return "Bilinmiyor";
+  if (typeof value === "boolean") return value ? "Evet" : "Hayır";
   if (typeof value === "object") return JSON.stringify(value, null, 2);
   return String(value);
 }
@@ -29,7 +60,7 @@ function deviceName(record) {
   const alias = props.Alias;
   const address = props.Address || "";
   if (alias && alias.replaceAll("-", ":").toLowerCase() !== address.toLowerCase()) return alias;
-  return "Unnamed device";
+  return "Adsız cihaz";
 }
 
 function updateButtons() {
@@ -38,7 +69,7 @@ function updateButtons() {
   $("duration").disabled = actionPending || running;
   $("stop-button").disabled = !connected || actionPending || !running || snapshot.stopping;
   $("export-button").disabled = !snapshot?.devices.length;
-  $("scan-button").textContent = running ? "Scanning…" : "Start scan";
+  $("scan-button").textContent = running ? "Taranıyor…" : "Taramayı başlat";
 }
 
 function renderDetails() {
@@ -48,7 +79,7 @@ function renderDetails() {
   lastDetail = signature;
   $("details-empty").hidden = Boolean(record);
   $("details-content").hidden = !record;
-  $("detail-label").textContent = record ? "Available information" : "No selection";
+  $("detail-label").textContent = record ? "Mevcut bilgiler" : "Seçim yok";
   if (!record) return;
   $("device-name").textContent = deviceName(record);
   $("device-address").textContent = text(record.properties.Address);
@@ -100,7 +131,7 @@ function renderDevices() {
     button.setAttribute("aria-pressed", String(record.path === selectedPath));
     nameCell.append(button);
     row.append(nameCell);
-    const values = [text(props.Address), props.RSSI == null ? "Unknown" : `${props.RSSI} dBm`, text(props.Paired), text(props.Connected)];
+    const values = [text(props.Address), props.RSSI == null ? "Bilinmiyor" : `${props.RSSI} dBm`, text(props.Paired), text(props.Connected)];
     values.forEach((value, index) => {
       const cell = document.createElement("td");
       cell.textContent = value;
@@ -122,17 +153,17 @@ function renderDevices() {
 function render(data) {
   snapshot = data;
   connected = true;
-  $("connection").textContent = data.stopping ? "Stopping" : data.scanning ? "Scanning" : "Connected";
+  $("connection").textContent = data.stopping ? "Durduruluyor" : data.scanning ? "Taranıyor" : "Bağlı";
   $("connection").className = `connection ${data.scanning ? "scanning" : "ready"}`;
-  $("status").textContent = data.message;
+  $("status").textContent = translate(data.message);
   $("error").hidden = !data.error;
-  $("error").textContent = data.error || "";
+  $("error").textContent = translate(data.error) || "";
   $("progress").hidden = !data.scanning;
   $("progress").max = data.timeout;
   $("progress").value = Math.min(data.elapsed, data.timeout);
-  $("scan-time").textContent = data.scanning ? `${Math.floor(data.elapsed)}s / ${data.timeout}s` : "";
-  $("empty-title").textContent = data.scanning ? "Looking for devices…" : data.elapsed > 0 ? "No devices discovered" : "Your next discovery starts here";
-  $("empty-description").textContent = data.scanning ? "Results appear here as devices are discovered." : data.elapsed > 0 ? "Make sure a device is advertising or discoverable, then try again." : "Start a scan to find nearby Bluetooth devices.";
+  $("scan-time").textContent = data.scanning ? `${Math.floor(data.elapsed)} sn / ${data.timeout} sn` : "";
+  $("empty-title").textContent = data.scanning ? "Cihazlar aranıyor…" : data.elapsed > 0 ? "Cihaz bulunamadı" : "Bir sonraki keşfin burada başlıyor";
+  $("empty-description").textContent = data.scanning ? "Cihazlar bulundukça sonuçlar burada görünür." : data.elapsed > 0 ? "Bir cihazın yayın yaptığından veya keşfedilebilir olduğundan emin olup yeniden deneyin." : "Yakındaki Bluetooth cihazlarını bulmak için bir tarama başlatın.";
   renderDevices();
   updateButtons();
 }
@@ -149,7 +180,7 @@ async function request(path, body) {
     }
     const response = await fetch(path, options);
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "The request failed.");
+    if (!response.ok) throw new Error(translate(data.error) || "İstek başarısız oldu.");
     return data;
   } finally {
     clearTimeout(timer);
@@ -168,9 +199,9 @@ async function poll() {
   } catch {
     if (version === requestVersion) {
       connected = false;
-      $("connection").textContent = "Offline";
+      $("connection").textContent = "Çevrimdışı";
       $("connection").className = "connection offline";
-      $("status").textContent = "Cannot reach the scanner. Check that the server is running. Retrying…";
+      $("status").textContent = "Tarayıcıya ulaşılamıyor. Sunucunun çalıştığını kontrol edin. Yeniden deneniyor…";
       updateButtons();
     }
   } finally {
@@ -186,7 +217,7 @@ async function action(path, body) {
     const data = await request(path, body);
     if (version === requestVersion) render(data);
   } catch (error) {
-    $("error").textContent = error.name === "AbortError" ? "The scanner did not respond. Check the connection and try again." : error.message;
+    $("error").textContent = error.name === "AbortError" ? "Tarayıcı yanıt vermedi. Bağlantıyı kontrol edip yeniden deneyin." : error.message;
     $("error").hidden = false;
   } finally {
     actionPending = false;

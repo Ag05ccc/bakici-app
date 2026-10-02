@@ -108,7 +108,7 @@ class ReportHTTPTests(unittest.TestCase):
             self.assertEqual(self.request("POST", path, "{}", headers)[0], 404)
 
     def test_building_assets_are_separate_from_local_scan_controls(self):
-        for path, expected in (("/", b"Building dashboard"), ("/building.js", b"/api/dashboard"), ("/building.css", b".node-marker")):
+        for path, expected in (("/", b"Bina panosu"), ("/building.js", b"/api/dashboard"), ("/building.css", b".node-marker")):
             status, body = self.request("GET", path)
             self.assertEqual(status, 200)
             self.assertIn(expected, body)

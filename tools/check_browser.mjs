@@ -240,7 +240,7 @@ try {
   assert.deepEqual(states["pi-06"], ["offline", "—"]);
   assert.deepEqual(states["pi-07"], ["waiting", "—"]);
   await click(sessionId, "#radio-wifi");
-  assert.equal(await text(sessionId, '[data-node-id="pi-08"] .node-state'), "Disabled");
+  assert.equal(await text(sessionId, '[data-node-id="pi-08"] .node-state'), "Devre dışı");
   pass("Fresh zero, error, stale, offline, waiting, and disabled remain distinct");
 
   await click(sessionId, '[data-node-id="pi-01"]');
@@ -270,13 +270,13 @@ try {
   for (const record of grouped.observations) assert(groupedText.includes(`${record.properties.RSSI} dBm`));
   pass("All observations group shared identity and preserve every reporting Pi's signal");
   const groupedNodes = new Set(grouped.observations.map((record) => record.node_id));
-  assert((await evaluate(sessionId, `document.querySelector('#observations-body tr:nth-child(${groupButton + 1})').lastElementChild.textContent`)).includes(`${groupedNodes.size} Pis · strongest at`));
+  assert((await evaluate(sessionId, `document.querySelector('#observations-body tr:nth-child(${groupButton + 1})').lastElementChild.textContent`)).includes(`${groupedNodes.size} Pi · en güçlü:`));
   assert.deepEqual((await evaluate(sessionId, "Array.from(document.querySelectorAll('.node-marker.reports')).map(marker => marker.dataset.nodeId)")).sort(), [...groupedNodes].sort());
   for (const nodeId of groupedNodes) assert((await text(sessionId, `[data-node-id="${nodeId}"] .node-signal`)).endsWith("dBm"));
   assert.equal(await evaluate(sessionId, "Array.from(document.querySelectorAll('.node-marker:not(.reports)')).every(marker => marker.classList.contains('quiet'))"), true);
   assert.equal(await evaluate(sessionId, "Array.from(document.querySelectorAll('.node-count')).some(count => count.textContent.includes('dBm'))"), false);
-  assert(groupedText.includes(`Same in all ${grouped.observations.length} reports`));
-  assert(groupedText.includes("Differs between reports"));
+  assert(groupedText.includes(`${grouped.observations.length} raporun tümünde aynı`));
+  assert(groupedText.includes("Raporlar arasında farklı"));
   pass("Shared rows count distinct Pis, details compare reports, and the map outlines reporting Pis without changing counts");
 
   await evaluate(sessionId, `(() => { const original = URL.createObjectURL; URL.createObjectURL = function(blob) { blob.text().then(text => { if (blob.type.startsWith("text/csv")) window.__csv = text; else window.__export = JSON.parse(text); }); return original.call(this, blob); }; })()`);
@@ -303,7 +303,7 @@ try {
   await setSearch(sessionId, "  SENSOR  ");
   await until(async () => await evaluate(sessionId, "document.querySelectorAll('#observations-body tr').length === 1"), "search narrows the list");
   assert((await text(sessionId, "#observations-body")).includes("Sensor Ω"));
-  assert.match(await text(sessionId, "#results-summary"), /^Showing 1 of \d+ observations$/);
+  assert.match(await text(sessionId, "#results-summary"), /^Gösterilen: 1 \/ \d+ gözlem$/);
   await evaluate(sessionId, "window.__export = null");
   await click(sessionId, "#export-button");
   await until(async () => await evaluate(sessionId, "Boolean(window.__export)"), "filtered export");
@@ -314,7 +314,7 @@ try {
   assert.equal(await evaluate(sessionId, "Array.from(document.querySelectorAll('#observations-body .address-column > span:first-child')).every(cell => cell.textContent.includes('02:00:00:00:00:0'))"), true);
   await setSearch(sessionId, "zzz-no-match");
   await until(async () => await evaluate(sessionId, "document.querySelectorAll('#observations-body tr').length === 0"), "no matches");
-  assert.equal(await text(sessionId, "#empty-title"), "No matching observations");
+  assert.equal(await text(sessionId, "#empty-title"), "Eşleşen gözlem yok");
   assert.equal(await text(sessionId, '[data-node-id="pi-01"] .node-count'), "2");
   await click(sessionId, "#empty-clear");
   assert.equal(await evaluate(sessionId, "document.getElementById('search').value"), "");
@@ -322,8 +322,8 @@ try {
   await until(async () => await evaluate(sessionId, "document.querySelectorAll('#observations-body tr').length === 1"), "literal HTML-like search");
   assert.equal(await evaluate(sessionId, "document.querySelector('main img') === null && window.__unsafe === undefined"), true);
   await click(sessionId, '[data-floor="3"] .floor-select');
-  assert.equal(await text(sessionId, "#scope-title"), "Floor 3");
-  assert.equal(await text(sessionId, "#empty-title"), "No matching observations");
+  assert.equal(await text(sessionId, "#scope-title"), "Kat 3");
+  assert.equal(await text(sessionId, "#empty-title"), "Eşleşen gözlem yok");
   await setSearch(sessionId, "shared");
   await click(sessionId, "#radio-wifi");
   assert.equal(await evaluate(sessionId, "document.getElementById('search').value"), "shared");
@@ -339,14 +339,14 @@ try {
   await until(async () => await evaluate(sessionId, `document.querySelectorAll('#observations-body tr').length === ${floorGroups.length}`), "floor-scoped rows");
   const floorReporters = new Set(grouped.observations.filter((item) => floorOne.has(item.node_id)).map((item) => item.node_id));
   const floorShared = await evaluate(sessionId, `Array.from(document.querySelectorAll('#observations-body tr')).find(row => row.dataset.observationId === ${JSON.stringify(grouped.id)})?.lastElementChild.textContent`);
-  assert(floorShared.includes(floorReporters.size > 1 ? `${floorReporters.size} Pis` : [...floorReporters].map((id) => floorApi.nodes.find((node) => node.id === id).label)[0]));
+  assert(floorShared.includes(floorReporters.size > 1 ? `${floorReporters.size} Pi ·` : [...floorReporters].map((id) => floorApi.nodes.find((node) => node.id === id).label)[0]));
   await click(sessionId, '[data-node-id="pi-02"]');
-  assert.equal(await text(sessionId, "#scope-floor"), "Floor 1");
-  assert.equal(await evaluate(sessionId, "document.getElementById('clear-pi').getAttribute('aria-label')"), "Clear Pi selection");
+  assert.equal(await text(sessionId, "#scope-floor"), "Kat 1");
+  assert.equal(await evaluate(sessionId, "document.getElementById('clear-pi').getAttribute('aria-label')"), "Pi seçimini temizle");
   await click(sessionId, "#clear-pi");
-  assert.equal(await text(sessionId, "#scope-title"), "Floor 1");
+  assert.equal(await text(sessionId, "#scope-title"), "Kat 1");
   await click(sessionId, "#scope-building");
-  assert.equal(await text(sessionId, "#scope-title"), "All observations");
+  assert.equal(await text(sessionId, "#scope-title"), "Tüm gözlemler");
   pass("Floor scope removes other floors' reporters before counting; the breadcrumb returns to floor and building");
 
   const healthApi = await (await fetch(base + "/api/dashboard")).json();
@@ -357,15 +357,15 @@ try {
   }
   await click(sessionId, "#pis-online");
   assert.equal(await evaluate(sessionId, "document.getElementById('pis-online').getAttribute('aria-expanded')"), "true");
-  assert.equal(await text(sessionId, "#scope-title"), "All observations");
+  assert.equal(await text(sessionId, "#scope-title"), "Tüm gözlemler");
   assert.deepEqual((await evaluate(sessionId, "Array.from(document.querySelectorAll('.attention-item')).map(item => `${item.dataset.attentionNode}:${item.dataset.radio || ''}`)")).sort(), expectedAttention.sort());
-  assert.equal(await text(sessionId, "#attention-count"), `${expectedAttention.length} need attention`);
+  assert.equal(await text(sessionId, "#attention-count"), `${expectedAttention.length} uyarı`);
   assert((await text(sessionId, "#attention-disabled")).includes("Pi 08 Wi-Fi"));
   await click(sessionId, '.attention-item[data-attention-node="pi-04"]');
   assert.equal(await text(sessionId, "#scope-title"), "Pi 04");
   assert.equal(await evaluate(sessionId, "document.getElementById('radio-bluetooth').getAttribute('aria-pressed')"), "true");
   const banner = await text(sessionId, "#retained-banner");
-  assert(banner.includes("Bluetooth scan failed · showing previous results") && banner.includes("Synthetic adapter failure"));
+  assert(banner.includes("Bluetooth taraması başarısız · önceki sonuçlar gösteriliyor") && banner.includes("Synthetic adapter failure"));
   assert.equal(await evaluate(sessionId, "!document.getElementById('retained-banner').hidden && document.getElementById('observations-body').classList.contains('is-retained')"), true);
   await click(sessionId, "#pis-online");
   assert.equal(await evaluate(sessionId, "document.getElementById('attention').hidden"), true);
@@ -399,7 +399,7 @@ try {
     await until(async () => await evaluate(sessionId, "!document.getElementById('new-rows').hidden"), "new-row indicator");
     const lateId = await evaluate(sessionId, "document.querySelector('#observations-body tr:last-child').dataset.observationId");
     assert(lateId.includes("02:00:00:00:07:07"));
-    assert.equal(await text(sessionId, "#new-rows"), "1 new · Sort now");
+    assert.equal(await text(sessionId, "#new-rows"), "1 yeni · Şimdi sırala");
     assert.equal(await evaluate(sessionId, "document.querySelector('#observations-body tr:last-child .new-tag').hidden"), false);
     await evaluate(sessionId, "document.querySelector('#observations-body tr:last-child .observation-select').focus()");
     const firstSignal = await text(sessionId, "#observations-body tr:last-child .signal-value");
@@ -420,10 +420,10 @@ try {
   await cdp("Page.reload", {}, sessionId);
   await untilPage(sessionId, "document.getElementById('scope-title')?.textContent === 'Pi 04' && document.getElementById('search').value === 'beacon'", "hash restores the view after reload");
   await evaluate(sessionId, "history.back()");
-  await untilPage(sessionId, "document.querySelectorAll('.node-marker').length === 9 && document.getElementById('scope-title').textContent === 'All observations'", "Back returns to the previous scope");
+  await untilPage(sessionId, "document.querySelectorAll('.node-marker').length === 9 && document.getElementById('scope-title').textContent === 'Tüm gözlemler'", "Back returns to the previous scope");
   await cdp("Page.navigate", { url: `${base}/#pi=pi-99&radio=bogus&sort=evil&floor=42&obs=%5B%22missing%22%5D` }, sessionId);
-  await untilPage(sessionId, "location.hash === '' && document.getElementById('scope-title').textContent === 'All observations'", "invalid hash falls back to defaults");
-  assert.deepEqual(await evaluate(sessionId, "[document.getElementById('sort').value, document.getElementById('radio-bluetooth').getAttribute('aria-pressed'), document.getElementById('detail-state').textContent]"), ["signal", "true", "No selection"]);
+  await untilPage(sessionId, "location.hash === '' && document.getElementById('scope-title').textContent === 'Tüm gözlemler'", "invalid hash falls back to defaults");
+  assert.deepEqual(await evaluate(sessionId, "[document.getElementById('sort').value, document.getElementById('radio-bluetooth').getAttribute('aria-pressed'), document.getElementById('detail-state').textContent]"), ["signal", "true", "Seçim yok"]);
   pass("URL hash restores scope and search after reload, Back returns to the previous scope, and invalid values fall back safely");
 
   await evaluate(sessionId, "document.activeElement.blur()");
@@ -475,9 +475,9 @@ try {
 
   await cdp("Network.emulateNetworkConditions", { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }, sessionId);
   await until(async () => await evaluate(sessionId, "!document.getElementById('connection-banner').hidden"), "disconnection banner");
-  assert((await text(sessionId, "#connection-banner")).includes("outdated"));
+  assert((await text(sessionId, "#connection-banner")).includes("güncel değil"));
   assert.equal(await text(sessionId, '[data-node-id="pi-01"] .node-count'), "—");
-  assert.deepEqual(await evaluate(sessionId, "[document.getElementById('connection-state').textContent, document.querySelector('[data-node-id=\"pi-01\"]').dataset.state]"), ["Server unavailable", "outdated"]);
+  assert.deepEqual(await evaluate(sessionId, "[document.getElementById('connection-state').textContent, document.querySelector('[data-node-id=\"pi-01\"]').dataset.state]"), ["Sunucuya ulaşılamıyor", "outdated"]);
   assert.equal(await evaluate(sessionId, "document.querySelectorAll('.node-marker').length"), 9);
   await cdp("Network.emulateNetworkConditions", { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }, sessionId);
   await until(async () => await evaluate(sessionId, "document.getElementById('connection-banner').hidden && document.querySelector('[data-node-id=\"pi-01\"] .node-count').textContent === '2'"), "automatic recovery");
@@ -489,7 +489,7 @@ try {
   await waitServer(local, localBase + "/api/status");
   await cdp("Page.navigate", { url: localBase }, sessionId);
   await until(async () => await evaluate(sessionId, "document.getElementById('scan-button') && !document.getElementById('scan-button').disabled"), "existing local GUI ready");
-  assert((await text(sessionId, "#status")).includes("Ready"));
+  assert((await text(sessionId, "#status")).includes("Taramaya hazır"));
   pass("Existing local Bluetooth GUI loads ready without starting a hardware scan");
 
   // The real ScanService/HTTP handler renders deterministic callback updates.
@@ -564,7 +564,7 @@ finally:
   assert.equal(await text(sessionId, "#device-count"), "0");
   await writeFile(path.join(temporary, "scan-1-first"), "");
   await until(async () => await evaluate(sessionId, "document.querySelectorAll('#devices tr').length === 1"), "first streaming observation");
-  assert.equal(await text(sessionId, ".device-select"), "Unnamed device");
+  assert.equal(await text(sessionId, ".device-select"), "Adsız cihaz");
   assert((await text(sessionId, "#devices")).includes("-70 dBm"));
   await click(sessionId, ".device-select");
   assert((await text(sessionId, "#properties")).includes("00ff12"));
@@ -595,7 +595,7 @@ finally:
   await click(secondSession, "#stop-button");
   await until(async () => await evaluate(secondSession, "!document.getElementById('scan-button').disabled && document.getElementById('stop-button').disabled"), "local scan stopped");
   await until(async () => await evaluate(sessionId, "!document.getElementById('scan-button').disabled"), "first tab observes Stop");
-  assert.equal(await text(secondSession, "#status"), "Scan stopped.");
+  assert.equal(await text(secondSession, "#status"), "Tarama durduruldu.");
   assert.equal(await text(secondSession, "#device-count"), "2");
   const stoppedScan = await (await fetch(scanBase + "/api/status")).json();
   assert.equal(stoppedScan.scanning, false);

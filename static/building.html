@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Nearby · Building dashboard</title>
+  <title>Nearby · Bina panosu</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/building.css">
   <script src="/building.js" defer></script>
@@ -12,93 +12,93 @@
 <body>
   <header class="topbar" id="topbar">
     <div class="topbar-inner">
-      <div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 21V3h14v18M2 21h20M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2M10 21v-3h4v3"/></svg></span><div><span class="brand-name">Nearby</span><span class="brand-caption">Building dashboard</span></div></div>
-      <div class="radio-switch" role="group" aria-label="Observation type">
+      <div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M5 21V3h14v18M2 21h20M9 7h2m2 0h2M9 11h2m2 0h2M9 15h2m2 0h2M10 21v-3h4v3"/></svg></span><div><span class="brand-name">Nearby</span><span class="brand-caption">Bina panosu</span></div></div>
+      <div class="radio-switch" role="group" aria-label="Gözlem türü">
         <button id="radio-bluetooth" class="radio-button active" type="button" aria-pressed="true" aria-keyshortcuts="B"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 7 10 10-5 4V3l5 4L7 17"/></svg>Bluetooth</button>
         <button id="radio-wifi" class="radio-button" type="button" aria-pressed="false" aria-keyshortcuts="W"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8a15 15 0 0 1 18 0M6 12a10 10 0 0 1 12 0m-9 4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".8" fill="currentColor"/></svg>Wi-Fi</button>
       </div>
       <div class="stats">
         <button id="pis-online" class="stat stat-button" type="button" aria-expanded="false" aria-controls="attention">
-          <span class="stat-main"><strong id="online-count">—</strong> <span>Pis online</span></span>
-          <span id="attention-count" class="attention-count">Checking health…</span>
+          <span class="stat-main"><strong id="online-count">—</strong> <span>Pi çevrimiçi</span></span>
+          <span id="attention-count" class="attention-count">Durum denetleniyor…</span>
         </button>
-        <div class="stat"><span class="stat-main"><strong id="observation-count">—</strong> <span id="observation-unit">current observations</span></span><span class="stat-note">Whole building</span></div>
+        <div class="stat"><span class="stat-main"><strong id="observation-count">—</strong> <span id="observation-unit">güncel gözlem</span></span><span class="stat-note">Tüm bina</span></div>
       </div>
-      <p id="connection" class="connection"><span id="connection-state" role="status">Connecting</span><span id="connection-age" class="connection-age"></span></p>
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Theme: automatic. Switch to light theme" title="Theme: automatic (follows your system)"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
+      <p id="connection" class="connection"><span id="connection-state" role="status">Bağlanıyor</span><span id="connection-age" class="connection-age"></span></p>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Tema: otomatik. Açık temaya geç" title="Tema: otomatik (sistemi izler)"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg></button>
     </div>
   </header>
 
   <div class="app">
-    <h1 class="sr-only">Nearby building dashboard</h1>
+    <h1 class="sr-only">Nearby bina panosu</h1>
     <p id="connection-banner" class="connection-banner" role="alert" hidden></p>
 
     <main class="workspace">
       <section class="building card" aria-labelledby="building-title">
         <div class="panel-heading">
-          <div><h2 id="building-title">Building</h2><p>Choose a floor or a Pi to narrow the list</p></div>
-          <button id="map-mode" class="button map-mode" type="button" aria-pressed="false">Show diagram</button>
+          <div><h2 id="building-title">Bina</h2><p>Listeyi daraltmak için bir kat veya Pi seçin</p></div>
+          <button id="map-mode" class="button map-mode" type="button" aria-pressed="false">Planı göster</button>
         </div>
         <section id="attention" class="attention" aria-labelledby="attention-title" hidden>
-          <div class="attention-heading"><h3 id="attention-title">Needs attention</h3><span id="attention-note"></span></div>
+          <div class="attention-heading"><h3 id="attention-title">Dikkat gerekenler</h3><span id="attention-note"></span></div>
           <ul id="attention-list" class="attention-list"></ul>
-          <p id="attention-empty" class="attention-empty" hidden>Every Pi is online and every enabled radio has fresh results.</p>
+          <p id="attention-empty" class="attention-empty" hidden>Tüm Pi'ler çevrimiçi ve etkin tüm radyolar güncel sonuç veriyor.</p>
           <p id="attention-disabled" class="attention-disabled" hidden></p>
         </section>
-        <div id="floors" class="floors"><p class="loading-message">Waiting for the building layout…</p></div>
+        <div id="floors" class="floors"><p class="loading-message">Bina yerleşimi bekleniyor…</p></div>
         <p id="map-caption" class="map-caption" hidden></p>
-        <ul class="legend" aria-label="Status legend" id="legend"></ul>
-        <p class="building-note overview-note">Overview groups Pis by floor. Show the diagram to see their configured positions.</p>
-        <p class="building-note" id="building-note">Badges show each Pi's latest scan count for the selected radio; search does not change them. Markers are configured Pi locations, not device positions.</p>
+        <ul class="legend" aria-label="Durum açıklaması" id="legend"></ul>
+        <p class="building-note overview-note">Özet görünüm Pi'leri kata göre gruplar. Yapılandırılmış konumlarını görmek için planı gösterin.</p>
+        <p class="building-note" id="building-note">Rozetler, seçili radyo için her Pi'nin son tarama sayısını gösterir; arama bunları değiştirmez. İşaretler Pi'lerin yapılandırılmış konumlarıdır, cihaz konumu değildir.</p>
       </section>
 
       <section class="observations card" aria-labelledby="scope-title">
         <div class="scope-heading">
-          <nav aria-label="Scope" class="breadcrumb" id="breadcrumb"></nav>
-          <h2 id="scope-title">All observations</h2>
-          <p id="scope-caption" class="scope-caption">Across all reporting Pis</p>
+          <nav aria-label="Kapsam" class="breadcrumb" id="breadcrumb"></nav>
+          <h2 id="scope-title">Tüm gözlemler</h2>
+          <p id="scope-caption" class="scope-caption">Rapor veren tüm Pi'ler</p>
         </div>
         <div id="node-details" class="node-details" hidden>
-          <dl class="node-meta"><div><dt>Location</dt><dd id="node-location"></dd></div><div><dt>Reporting IP</dt><dd id="node-ip"></dd></div><div><dt>Last heartbeat</dt><dd id="node-heartbeat"></dd></div><div><dt>Last contact</dt><dd id="node-contact"></dd></div></dl>
+          <dl class="node-meta"><div><dt>Konum</dt><dd id="node-location"></dd></div><div><dt>Rapor IP'si</dt><dd id="node-ip"></dd></div><div><dt>Son yaşam sinyali</dt><dd id="node-heartbeat"></dd></div><div><dt>Son iletişim</dt><dd id="node-contact"></dd></div></dl>
           <div id="radio-health" class="radio-health"></div>
         </div>
         <div class="list-controls">
           <div class="search-field">
-            <label for="search">Search</label>
-            <div class="search-input"><svg class="search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Name or address" aria-describedby="search-help" aria-keyshortcuts="/"><button id="clear-search" class="clear-search" type="button" aria-label="Clear search" hidden>×</button></div>
-            <span id="search-help" class="search-help">Matches any in-scope Pi's reported name or address.</span>
+            <label for="search">Ara</label>
+            <div class="search-input"><svg class="search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Ad veya adres" aria-describedby="search-help" aria-keyshortcuts="/"><button id="clear-search" class="clear-search" type="button" aria-label="Aramayı temizle" hidden>×</button></div>
+            <span id="search-help" class="search-help">Kapsamdaki herhangi bir Pi'nin bildirdiği ad veya adresle eşleşir.</span>
           </div>
           <div class="sort-field">
-            <label for="sort">Sort</label>
-            <div class="sort-row"><select id="sort"><option value="signal">Strongest signal</option><option value="name">Name</option><option value="address">Address</option></select><button id="sort-now" class="button" type="button">Sort now</button></div>
+            <label for="sort">Sırala</label>
+            <div class="sort-row"><select id="sort"><option value="signal">En güçlü sinyal</option><option value="name">Ad</option><option value="address">Adres</option></select><button id="sort-now" class="button" type="button">Şimdi sırala</button></div>
           </div>
         </div>
         <div class="results-heading">
-          <div class="results-text"><span id="results-summary">Waiting for reports</span><span id="results-context">Fresh results only</span></div>
+          <div class="results-text"><span id="results-summary">Raporlar bekleniyor</span><span id="results-context">Yalnızca güncel sonuçlar</span></div>
           <div class="results-actions">
             <button id="new-rows" class="new-rows" type="button" hidden></button
             ><div class="export-group" role="group" aria-labelledby="export-label">
-              <span id="export-label" class="export-label">Export</span>
-              <button class="button" id="export-button" type="button" aria-label="Export JSON" disabled><svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>JSON</button>
-              <button class="button" id="export-csv" type="button" aria-label="Export CSV" disabled><svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>CSV</button>
+              <span id="export-label" class="export-label">Dışa aktar</span>
+              <button class="button" id="export-button" type="button" aria-label="JSON olarak dışa aktar" disabled><svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>JSON</button>
+              <button class="button" id="export-csv" type="button" aria-label="CSV olarak dışa aktar" disabled><svg class="button-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>CSV</button>
             </div>
           </div>
         </div>
         <p id="retained-banner" class="retained-banner" hidden></p>
-        <div class="table-scroll"><table><caption class="sr-only">Select an observation to inspect its identity, each reporting Pi's measurement and all available properties.</caption><thead><tr><th scope="col" id="name-heading">Device</th><th scope="col" id="address-heading" class="address-column">Address</th><th scope="col" id="signal-heading">Signal</th></tr></thead><tbody id="observations-body"></tbody></table></div>
-        <div id="empty-state" class="empty-state"><span aria-hidden="true">◎</span><h3 id="empty-title">Waiting for your first observations</h3><p id="empty-description">Results appear automatically as the Pis report.</p><button id="empty-clear" class="button" type="button" hidden>Clear search</button></div>
-        <p class="shortcuts" id="shortcuts">Keys: <kbd>/</kbd> search · <kbd>↑</kbd> <kbd>↓</kbd> move between focused rows · <kbd>Esc</kbd> clear · <kbd>B</kbd> / <kbd>W</kbd> radio</p>
+        <div class="table-scroll"><table><caption class="sr-only">Kimliğini, bildiren her Pi'nin ölçümünü ve tüm özelliklerini incelemek için bir gözlem seçin.</caption><thead><tr><th scope="col" id="name-heading">Cihaz</th><th scope="col" id="address-heading" class="address-column">Adres</th><th scope="col" id="signal-heading">Sinyal</th></tr></thead><tbody id="observations-body"></tbody></table></div>
+        <div id="empty-state" class="empty-state"><span aria-hidden="true">◎</span><h3 id="empty-title">İlk gözlemler bekleniyor</h3><p id="empty-description">Pi'ler rapor verdikçe sonuçlar otomatik olarak görünür.</p><button id="empty-clear" class="button" type="button" hidden>Aramayı temizle</button></div>
+        <p class="shortcuts" id="shortcuts">Tuşlar: <kbd>/</kbd> ara · <kbd>↑</kbd> <kbd>↓</kbd> seçili satırlar arasında gezin · <kbd>Esc</kbd> temizle · <kbd>B</kbd> / <kbd>W</kbd> radyo</p>
       </section>
 
       <aside class="details card" id="details" aria-labelledby="details-title">
-        <div class="detail-heading"><h2 id="details-title">Observation details</h2><span id="detail-state">No selection</span></div>
-        <p id="details-empty">Select an observation to see its identity, each reporting Pi's measurement and every reported property.</p>
+        <div class="detail-heading"><h2 id="details-title">Gözlem ayrıntıları</h2><span id="detail-state">Seçim yok</span></div>
+        <p id="details-empty">Kimliğini, bildiren her Pi'nin ölçümünü ve bildirilen tüm özellikleri görmek için bir gözlem seçin.</p>
         <div id="properties" hidden></div>
       </aside>
     </main>
-    <p class="footnote" id="radio-note">Bluetooth shows discovery observations, including Classic and BLE. Signal strength is in dBm and does not measure distance.</p>
+    <p class="footnote" id="radio-note">Bluetooth, Classic ve BLE dahil keşif gözlemlerini gösterir. Sinyal gücü dBm cinsindendir ve mesafeyi ölçmez.</p>
   </div>
-  <footer><div class="footer-inner"><span>Nearby · Local network discovery</span><span>Updates every 2 seconds · every 10 seconds in a background tab</span></div></footer>
+  <footer><div class="footer-inner"><span>Nearby · Yerel ağ keşfi</span><span>2 saniyede bir güncellenir · arka plandaki sekmede 10 saniyede bir</span></div></footer>
 
   <template id="floor-template">
     <section class="floor"><div class="floor-heading"><h3><button class="floor-select" type="button"></button></h3><span class="floor-status"></span></div><div class="floor-canvas"><svg class="floor-plan" viewBox="0 0 600 160" preserveAspectRatio="none" fill="none" aria-hidden="true"><rect x="6" y="6" width="588" height="148" rx="8"/><path d="M202 6v49m0 49v50M398 6v49m0 49v50M6 80h65m43 0h45m84 0h114m84 0h45m43 0h65"/><path class="door" d="M202 55a49 49 0 0 1 49 49h-49m196-49a49 49 0 0 0-49 49h49"/><path class="window" d="M56 6h90m108 0h90m108 0h90M56 154h90m108 0h90m108 0h90"/></svg><div class="marker-layer"></div></div></section>

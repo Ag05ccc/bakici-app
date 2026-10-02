@@ -4,13 +4,14 @@
   const $ = (id) => document.getElementById(id);
   const RADIOS = ["bluetooth", "wifi"];
   const SORTS = ["signal", "name", "address"];
-  const stateLabels = { fresh: "Fresh", online: "Online", stale: "Stale", error: "Scan error", offline: "Offline", waiting: "Waiting", disabled: "Disabled", outdated: "Outdated" };
-  const sortLabels = { signal: "strongest signal", name: "name", address: "address" };
+  const stateLabels = { fresh: "Güncel", online: "Çevrimiçi", stale: "Eski", error: "Tarama hatası", offline: "Çevrimdışı", waiting: "Bekleniyor", disabled: "Devre dışı", outdated: "Görünüm eski" };
+  const sortLabels = { signal: "en güçlü sinyale göre", name: "ada göre", address: "adrese göre" };
+  const UNKNOWN = "Bilinmiyor";
   // Identity fields shown once only when every in-scope report supplies the same value.
   const identityFields = { bluetooth: ["Name", "Alias", "Address", "AddressType", "Icon", "Class", "Appearance"], wifi: ["SSID", "BSSID", "HwAddress", "Frequency", "Channel", "Security"] };
   const adapterFields = new Set(["Paired", "Connected", "Trusted", "Blocked", "Bonded", "ServicesResolved"]);
   const monoFields = new Set(["Address", "BSSID", "HwAddress", "SSIDHex", "Ssid", "UUIDs", "Adapter", "Modalias"]);
-  const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+  const collator = new Intl.Collator("tr", { sensitivity: "base", numeric: true });
 
   let snapshot = null;
   let connected = false;
@@ -51,33 +52,32 @@
   }
 
   function radioName(name = view.radio) { return name === "wifi" ? "Wi-Fi" : "Bluetooth"; }
-  function label(status) { return stateLabels[status] || "Unknown"; }
+  function label(status) { return stateLabels[status] || UNKNOWN; }
   function isNumber(value) { return typeof value === "number" && Number.isFinite(value); }
-  function plural(count, one, many) { return count === 1 ? one : many; }
   function ageText(age) {
-    if (!isNumber(age)) return "not yet received";
-    if (age < 1) return "just now";
-    if (age < 60) return `${Math.floor(age)}s ago`;
-    if (age < 3600) return `${Math.floor(age / 60)}m ago`;
-    return `${Math.floor(age / 3600)}h ago`;
+    if (!isNumber(age)) return "henüz alınmadı";
+    if (age < 1) return "az önce";
+    if (age < 60) return `${Math.floor(age)} sn önce`;
+    if (age < 3600) return `${Math.floor(age / 60)} dk önce`;
+    return `${Math.floor(age / 3600)} sa önce`;
   }
   function valueText(value) {
-    if (value === null || value === undefined) return "Unknown";
-    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (value === null || value === undefined) return UNKNOWN;
+    if (typeof value === "boolean") return value ? "Evet" : "Hayır";
     if (value === "") return '""';
     return typeof value === "object" ? JSON.stringify(value, null, 2) : String(value);
   }
   function textProperty(value) { return typeof value === "string" && value.length ? value : null; }
   function recordName(properties) {
-    if (view.radio === "wifi") return properties.SSID === "" ? "Hidden network" : textProperty(properties.SSID) || "Unknown network";
-    return textProperty(properties.Name) || textProperty(properties.Alias) || "Unknown device";
+    if (view.radio === "wifi") return properties.SSID === "" ? "Gizli ağ" : textProperty(properties.SSID) || "Bilinmeyen ağ";
+    return textProperty(properties.Name) || textProperty(properties.Alias) || "Bilinmeyen cihaz";
   }
   function hasName(properties) { return view.radio === "wifi" ? typeof properties.SSID === "string" : !!(textProperty(properties.Name) || textProperty(properties.Alias)); }
   function address(properties) {
-    return textProperty(view.radio === "wifi" ? properties.BSSID || properties.HwAddress : properties.Address) || "Unknown";
+    return textProperty(view.radio === "wifi" ? properties.BSSID || properties.HwAddress : properties.Address) || UNKNOWN;
   }
   function signalValue(properties) { return view.radio === "wifi" ? properties.Strength : properties.RSSI; }
-  function formatSignal(value) { return isNumber(value) ? `${value}${view.radio === "wifi" ? "%" : " dBm"}` : "Unknown signal"; }
+  function formatSignal(value) { return isNumber(value) ? `${value}${view.radio === "wifi" ? "%" : " dBm"}` : "Sinyal bilinmiyor"; }
   function signalText(properties) { return formatSignal(signalValue(properties)); }
   // Meter length: Bluetooth -100 to -30 dBm and Wi-Fi 0 to 100 % both map onto 0 to 100 %.
   function signalPercent(value) {
@@ -93,7 +93,7 @@
     return null;
   }
   function channelText(properties) {
-    return [isNumber(properties.Channel) ? `Ch ${properties.Channel}` : null, bandName(properties.Frequency)].filter(Boolean).join(" · ") || null;
+    return [isNumber(properties.Channel) ? `Kanal ${properties.Channel}` : null, bandName(properties.Frequency)].filter(Boolean).join(" · ") || null;
   }
   function deviceType(properties) {
     const icon = textProperty(properties.Icon);
@@ -102,7 +102,9 @@
   function nodeById(id) { return snapshot?.nodes.find((node) => node.id === id) || null; }
   function selectedNode() { return view.nodeId ? nodeById(view.nodeId) : null; }
   function nodeLabel(id) { return nodeById(id)?.label || id; }
-  function normalizedQuery() { return view.query.trim().toLowerCase(); }
+  // Case-insensitive matching that also treats Turkish I/ı/İ/i alike.
+  function fold(text) { return text.toLowerCase().replace(/\u0307/g, "").replace(/ı/g, "i"); }
+  function normalizedQuery() { return fold(view.query.trim()); }
 
   const iconShapes = {
     fresh: [["circle", { cx: 12, cy: 12, r: 6, fill: "currentColor", stroke: "none" }]],
@@ -162,7 +164,7 @@
     const values = view.radio === "wifi"
       ? [recordName(properties), properties.SSID, properties.BSSID, properties.HwAddress]
       : [recordName(properties), properties.Name, properties.Alias, properties.Address];
-    return values.filter((value) => typeof value === "string").join("\n").toLowerCase();
+    return fold(values.filter((value) => typeof value === "string").join("\n"));
   }
   function matches(row, needle) { return !needle || row.observations.some((item) => searchText(item.properties).includes(needle)); }
   function representative(row) { return row.observations.find((item) => hasName(item.properties)) || row.observations[0]; }
@@ -184,7 +186,7 @@
     } else {
       const key = (row) => {
         const properties = representative(row).properties;
-        return view.sort === "name" ? [hasName(properties) ? 0 : 1, recordName(properties)] : [address(properties) === "Unknown" ? 1 : 0, address(properties)];
+        return view.sort === "name" ? [hasName(properties) ? 0 : 1, recordName(properties)] : [address(properties) === UNKNOWN ? 1 : 0, address(properties)];
       };
       const [knownA, textA] = key(left);
       const [knownB, textB] = key(right);
@@ -228,18 +230,18 @@
     const freshNodes = snapshot.nodes.filter((item) => item.radios[view.radio].state === "fresh");
     $("online-count").textContent = connected ? `${online} / ${snapshot.nodes.length}` : "—";
     $("observation-count").textContent = connected && freshNodes.length ? snapshot.all_observations[view.radio].length : "—";
-    $("observation-unit").textContent = view.radio === "wifi" ? "current access points" : "current observations";
+    $("observation-unit").textContent = view.radio === "wifi" ? "güncel erişim noktası" : "güncel gözlem";
     for (const name of RADIOS) {
       $(`radio-${name}`).classList.toggle("active", view.radio === name);
       $(`radio-${name}`).setAttribute("aria-pressed", String(view.radio === name));
     }
     $("export-button").disabled = false;
     $("export-csv").disabled = false;
-    $("export-button").title = `Download the displayed ${radioName()} rows as JSON, with scope, search, sort and freshness context`;
-    $("export-csv").title = `Download the displayed ${radioName()} rows as CSV: one line per reporting Pi`;
+    $("export-button").title = `Gösterilen ${radioName()} satırlarını kapsam, arama, sıralama ve güncellik bilgisiyle JSON olarak indir`;
+    $("export-csv").title = `Gösterilen ${radioName()} satırlarını CSV olarak indir: bildiren her Pi için bir satır`;
     $("radio-note").textContent = view.radio === "wifi"
-      ? "Wi-Fi shows nearby access points, not connected phones or laptops. Signal quality is a percentage. Shared SSIDs can belong to different access points."
-      : "Bluetooth shows discovery observations, including Classic and BLE. Rotating addresses may appear separately. Signal strength is in dBm and does not measure distance.";
+      ? "Wi-Fi, bağlı telefonları veya dizüstü bilgisayarları değil, yakındaki erişim noktalarını gösterir. Sinyal kalitesi yüzde olarak verilir. Aynı SSID farklı erişim noktalarına ait olabilir."
+      : "Bluetooth, Classic ve BLE dahil keşif gözlemlerini gösterir. Değişen adresler ayrı satırlarda görünebilir. Sinyal gücü dBm cinsindendir ve mesafeyi ölçmez.";
   }
 
   function renderBuilding() {
@@ -253,7 +255,7 @@
         const section = $("floor-template").content.firstElementChild.cloneNode(true);
         section.dataset.floor = String(number);
         const select = section.querySelector(".floor-select");
-        select.textContent = `Floor ${number}`;
+        select.textContent = `Kat ${number}`;
         select.addEventListener("click", () => setScope({ floor: number, nodeId: null }));
         for (const node of snapshot.nodes.filter((item) => item.floor === number)) {
           const button = element("button", "node-marker");
@@ -283,8 +285,8 @@
       const count = connected && result.state === "fresh" ? result.count : "—";
       marker.button.classList.toggle("selected", node.id === view.nodeId);
       marker.button.setAttribute("aria-pressed", String(node.id === view.nodeId));
-      marker.baseLabel = `${node.label}, ${node.location}, ${radioName()}: ${connected ? label(status) : "view outdated"}, ${count === "—" ? "count unavailable" : `${count} ${plural(count, "observation", "observations")}`}`;
-      marker.button.title = `${node.label} · ${node.location} · ${radioName()} ${connected ? label(status) : "view outdated"}`;
+      marker.baseLabel = `${node.label}, ${node.location}, ${radioName()}: ${connected ? label(status) : "görünüm güncel değil"}, ${count === "—" ? "sayı yok" : `${count} gözlem`}`;
+      marker.button.title = `${node.label} · ${node.location} · ${radioName()} ${connected ? label(status) : "görünüm güncel değil"}`;
       marker.count.textContent = count;
       if (marker.state !== status) {
         marker.state = status;
@@ -297,7 +299,7 @@
       const number = Number(floor.dataset.floor);
       const nodes = snapshot.nodes.filter((node) => node.floor === number);
       const online = nodes.filter((node) => node.state === "online").length;
-      floor.querySelector(".floor-status").textContent = connected ? `${online} / ${nodes.length} online` : "View outdated";
+      floor.querySelector(".floor-status").textContent = connected ? `${online} / ${nodes.length} çevrimiçi` : "Görünüm güncel değil";
       floor.classList.toggle("selected-floor", view.floor === number);
       const select = floor.querySelector(".floor-select");
       if (view.floor === number) select.setAttribute("aria-current", "true");
@@ -324,16 +326,16 @@
       marker.button.classList.toggle("reports", reports);
       marker.button.classList.toggle("quiet", !!row && !reports);
       marker.signal.hidden = !reports;
-      marker.signal.textContent = reports ? `${formatSignal(signals.get(nodeId))}${old ? " · old" : ""}` : "";
+      marker.signal.textContent = reports ? `${formatSignal(signals.get(nodeId))}${old ? " · eski" : ""}` : "";
       marker.signal.classList.toggle("old", old);
-      marker.button.setAttribute("aria-label", marker.baseLabel + (reports ? `. Reported the ${id === observationId ? "selected" : "highlighted"} observation at ${formatSignal(signals.get(nodeId))}${old ? ", previous result" : ""}` : ""));
+      marker.button.setAttribute("aria-label", marker.baseLabel + (reports ? `. ${id === observationId ? "Seçili" : "Vurgulanan"} gözlemi ${formatSignal(signals.get(nodeId))} ile bildirdi${old ? ", önceki sonuç" : ""}` : ""));
     }
     const caption = $("map-caption");
     caption.hidden = !row;
     if (row) {
       const name = recordName(representative(row).properties);
-      const prefix = id === observationId ? "" : "Preview: ";
-      caption.textContent = `${prefix}${signals.size} outlined ${plural(signals.size, "Pi", "Pis")} reported “${name}”. Each marker shows its own signal reading; this does not locate the device.`;
+      const prefix = id === observationId ? "" : "Önizleme: ";
+      caption.textContent = `${prefix}Çerçeveli ${signals.size} Pi “${name}” gözlemini bildirdi. Her işaret kendi sinyal ölçümünü gösterir; bu, cihazın yerini belirtmez.`;
     }
   }
 
@@ -342,7 +344,7 @@
     const disabled = [];
     for (const node of snapshot.nodes) {
       if (node.state === "offline" || node.state === "waiting") {
-        items.push({ node, radio: null, state: node.state, text: node.state === "offline" ? "Pi offline" : "No report received yet" });
+        items.push({ node, radio: null, state: node.state, text: node.state === "offline" ? "Pi çevrimdışı" : "Henüz rapor alınmadı" });
         continue;
       }
       for (const radio of RADIOS) {
@@ -356,7 +358,7 @@
   function renderAttention() {
     const { items, disabled } = attentionItems();
     const count = $("attention-count");
-    count.textContent = !connected ? "Health unavailable · view outdated" : items.length ? `${items.length} ${plural(items.length, "needs", "need")} attention` : "Nothing needs attention";
+    count.textContent = !connected ? "Durum bilinmiyor · görünüm güncel değil" : items.length ? `${items.length} uyarı` : "Uyarı yok";
     count.classList.toggle("has-issues", connected && items.length > 0);
     $("pis-online").setAttribute("aria-expanded", String(attentionOpen));
     $("attention").hidden = !attentionOpen;
@@ -364,7 +366,7 @@
       attentionKey = "";
       return;
     }
-    $("attention-note").textContent = connected ? "Select an entry to open that Pi" : "View outdated";
+    $("attention-note").textContent = connected ? "Pi'yi açmak için bir kayda tıklayın" : "Görünüm güncel değil";
     const key = JSON.stringify(items.map((item) => [item.node.id, item.node.label, item.radio, item.state]));
     if (key !== attentionKey) {
       attentionKey = key;
@@ -387,7 +389,7 @@
     }
     $("attention-empty").hidden = items.length > 0;
     $("attention-disabled").hidden = !disabled.length;
-    $("attention-disabled").textContent = disabled.length ? `Disabled radios (not failures): ${disabled.join(", ")}` : "";
+    $("attention-disabled").textContent = disabled.length ? `Devre dışı radyolar (arıza değil): ${disabled.join(", ")}` : "";
   }
 
   function renderScope(node) {
@@ -412,17 +414,17 @@
         return span;
       };
       const parts = [];
-      if (view.floor === null && !node) parts.push(current("Building"));
+      if (view.floor === null && !node) parts.push(current("Bina"));
       else {
-        parts.push(crumb("Building", "scope-building", { floor: null, nodeId: null }), separator());
-        if (!node) parts.push(current(`Floor ${view.floor}`));
+        parts.push(crumb("Bina", "scope-building", { floor: null, nodeId: null }), separator());
+        if (!node) parts.push(current(`Kat ${view.floor}`));
         else {
-          parts.push(crumb(`Floor ${node.floor}`, "scope-floor", { floor: node.floor, nodeId: null }), separator(), current(node.label));
+          parts.push(crumb(`Kat ${node.floor}`, "scope-floor", { floor: node.floor, nodeId: null }), separator(), current(node.label));
           const clear = element("button", "crumb-clear", "×");
           clear.type = "button";
           clear.id = "clear-pi";
-          clear.title = "Clear Pi selection";
-          clear.setAttribute("aria-label", "Clear Pi selection");
+          clear.title = "Pi seçimini temizle";
+          clear.setAttribute("aria-label", "Pi seçimini temizle");
           clear.addEventListener("click", () => { setScope({ floor: node.floor, nodeId: null }); $("scope-title").focus({ preventScroll: true }); });
           parts.push(clear);
         }
@@ -430,14 +432,14 @@
       $("breadcrumb").replaceChildren(...parts);
     }
     const floorNodes = view.floor === null ? [] : snapshot.nodes.filter((item) => item.floor === view.floor);
-    $("scope-title").textContent = node ? node.label : view.floor !== null ? `Floor ${view.floor}` : "All observations";
+    $("scope-title").textContent = node ? node.label : view.floor !== null ? `Kat ${view.floor}` : "Tüm gözlemler";
     $("scope-caption").textContent = node
-      ? `Floor ${node.floor} · ${node.id} · ${label(node.state)}`
-      : view.floor !== null ? `${floorNodes.length} ${plural(floorNodes.length, "Pi", "Pis")} on this floor · fresh results only` : "Across all reporting Pis · fresh results only";
+      ? `Kat ${node.floor} · ${node.id} · ${label(node.state)}`
+      : view.floor !== null ? `Bu katta ${floorNodes.length} Pi · yalnızca güncel sonuçlar` : "Rapor veren tüm Pi'ler · yalnızca güncel sonuçlar";
     $("node-details").hidden = !node;
     if (!node) return;
     $("node-location").textContent = node.location;
-    $("node-ip").textContent = node.ip || "Not yet received";
+    $("node-ip").textContent = node.ip || "Henüz alınmadı";
     $("node-heartbeat").textContent = ageText(node.heartbeat_age);
     $("node-contact").textContent = ageText(node.age);
     const health = document.createDocumentFragment();
@@ -445,8 +447,8 @@
       const results = node.radios[name];
       const state = connected ? results.state : "outdated";
       const text = connected
-        ? `${radioName(name)} · ${label(results.state)} · ${results.age === null ? "no results yet" : `scan report ${ageText(results.age)}`}`
-        : `${radioName(name)} · last known ${label(results.state)}`;
+        ? `${radioName(name)} · ${label(results.state)} · ${results.age === null ? "henüz sonuç yok" : `tarama raporu ${ageText(results.age)}`}`
+        : `${radioName(name)} · son bilinen: ${label(results.state)}`;
       const badge = stateBadge(state, text);
       badge.classList.add("health", state);
       badge.dataset.radio = name;
@@ -457,41 +459,40 @@
   }
 
   function renderSummary(rows, scoped, node) {
-    const noun = view.radio === "wifi" ? ["access point", "access points"] : ["observation", "observations"];
-    const nouns = (count) => plural(count, noun[0], noun[1]);
+    const noun = view.radio === "wifi" ? "erişim noktası" : "gözlem";
     const result = node?.radios[view.radio];
     const scopeNodes = node ? [node] : view.floor !== null ? snapshot.nodes.filter((item) => item.floor === view.floor) : snapshot.nodes;
     const hasFresh = scopeNodes.some((item) => item.radios[view.radio].state === "fresh");
     let summary;
-    if (!connected) summary = `Showing ${rows.length} of ${scoped.length} saved ${nouns(scoped.length)} · outdated view`;
-    else if (node && result.state !== "fresh") summary = scoped.length ? `Showing ${rows.length} of ${scoped.length} previous ${nouns(scoped.length)} · not current` : `No current count · ${label(result.state)}`;
-    else if (!node && !hasFresh) summary = "No current count · awaiting fresh reports";
-    else summary = `Showing ${rows.length} of ${scoped.length} ${nouns(scoped.length)}`;
+    if (!connected) summary = `Gösterilen: ${rows.length} / ${scoped.length} kayıtlı ${noun} · görünüm güncel değil`;
+    else if (node && result.state !== "fresh") summary = scoped.length ? `Gösterilen: ${rows.length} / ${scoped.length} önceki ${noun} · güncel değil` : `Güncel sayı yok · ${label(result.state)}`;
+    else if (!node && !hasFresh) summary = "Güncel sayı yok · güncel raporlar bekleniyor";
+    else summary = `Gösterilen: ${rows.length} / ${scoped.length} ${noun}`;
     $("results-summary").textContent = summary;
-    const context = !connected ? "Reconnect to verify freshness"
-      : node ? (result.state === "fresh" ? `Fresh scan · report ${ageText(result.age)}` : `Scan report ${ageText(result.age)}`)
-        : "Fresh results only";
-    $("results-context").textContent = `${context} · by ${sortLabels[view.sort]}`;
-    $("name-heading").textContent = view.radio === "wifi" ? "Network (SSID)" : "Device";
-    $("address-heading").textContent = view.radio === "wifi" ? "BSSID" : "Address";
+    const context = !connected ? "Güncelliği doğrulamak için yeniden bağlanın"
+      : node ? (result.state === "fresh" ? `Güncel tarama · rapor ${ageText(result.age)}` : `Tarama raporu ${ageText(result.age)}`)
+        : "Yalnızca güncel sonuçlar";
+    $("results-context").textContent = `${context} · ${sortLabels[view.sort]}`;
+    $("name-heading").textContent = view.radio === "wifi" ? "Ağ (SSID)" : "Cihaz";
+    $("address-heading").textContent = view.radio === "wifi" ? "BSSID" : "Adres";
     const pill = $("new-rows");
     pill.hidden = !appended.size;
-    pill.textContent = `${appended.size} new · Sort now`;
-    pill.title = "Rows that appeared since the last sort were added at the end. Sort now to reorder.";
+    pill.textContent = `${appended.size} yeni · Şimdi sırala`;
+    pill.title = "Son sıralamadan sonra gelen satırlar sona eklendi. Yeniden sıralamak için tıklayın.";
 
     const banner = $("retained-banner");
     const retained = connected && node && result.state !== "fresh" && scoped.length > 0;
     banner.hidden = !retained;
     if (retained) {
       const headline = {
-        error: `${radioName()} scan failed · showing previous results`,
-        stale: `${radioName()} results are stale · showing previous results`,
-        offline: "Pi offline · showing previous results",
-        disabled: `${radioName()} is disabled · showing previous results`,
-      }[result.state] || "Showing previous results";
+        error: `${radioName()} taraması başarısız · önceki sonuçlar gösteriliyor`,
+        stale: `${radioName()} sonuçları eski · önceki sonuçlar gösteriliyor`,
+        offline: "Pi çevrimdışı · önceki sonuçlar gösteriliyor",
+        disabled: `${radioName()} devre dışı · önceki sonuçlar gösteriliyor`,
+      }[result.state] || "Önceki sonuçlar gösteriliyor";
       const text = element("span");
       const error = (result.error || "").trim();
-      text.append(element("strong", "", headline), document.createTextNode(`Scan report ${ageText(result.age)}.${error ? ` ${error}${/[.!?]$/.test(error) ? "" : "."}` : ""} These rows are not current.`));
+      text.append(element("strong", "", headline), document.createTextNode(`Tarama raporu ${ageText(result.age)}.${error ? ` ${error}${/[.!?]$/.test(error) ? "" : "."}` : ""} Bu satırlar güncel değil.`));
       banner.replaceChildren(stateIcon(result.state === "error" ? "error" : "stale"), text);
     }
   }
@@ -501,10 +502,10 @@
     tr.dataset.observationId = id;
     const button = element("button", "observation-select");
     button.type = "button";
-    const newTag = element("span", "new-tag", "New");
+    const newTag = element("span", "new-tag", "Yeni");
     newTag.hidden = true;
     const nameAddress = element("span", "name-address");
-    const link = element("button", "details-link", "Show details ↓");
+    const link = element("button", "details-link", "Ayrıntıları göster ↓");
     link.type = "button";
     link.addEventListener("click", () => {
       $("details").scrollIntoView({ block: "start" });
@@ -538,7 +539,7 @@
     const nodes = new Set(row.observations.map((item) => item.node_id));
     const best = strongest(row);
     if (nodes.size === 1) return { value: best.value, text: nodeLabel([...nodes][0]) };
-    return { value: best.value, text: best.value === null ? `${nodes.size} Pis · signal unknown` : `${nodes.size} Pis · strongest at ${nodeLabel(best.nodeId)}` };
+    return { value: best.value, text: best.value === null ? `${nodes.size} Pi · sinyal bilinmiyor` : `${nodes.size} Pi · en güçlü: ${nodeLabel(best.nodeId)}` };
   }
   function updateRow(entry, row) {
     const properties = representative(row).properties;
@@ -599,31 +600,31 @@
     $("empty-clear").hidden = true;
     if (rows.length) return;
     const result = node?.radios[view.radio];
-    let title = view.floor !== null && !node ? `No current observations on Floor ${view.floor}` : "No current observations";
-    let description = view.floor !== null && !node ? "Results appear when a Pi on this floor completes a fresh scan." : "Results appear automatically when a Pi completes a fresh scan.";
+    let title = view.floor !== null && !node ? `Kat ${view.floor} için güncel gözlem yok` : "Güncel gözlem yok";
+    let description = view.floor !== null && !node ? "Bu kattaki bir Pi yeni bir tarama tamamladığında sonuçlar görünür." : "Bir Pi yeni bir tarama tamamladığında sonuçlar otomatik olarak görünür.";
     if (scoped.length) {
-      title = view.radio === "wifi" ? "No matching access points" : "No matching observations";
-      description = `Nothing in this view matches “${view.query.trim()}”. The scanners' results and Pi counts are unchanged.`;
+      title = view.radio === "wifi" ? "Eşleşen erişim noktası yok" : "Eşleşen gözlem yok";
+      description = `Bu görünümde “${view.query.trim()}” ile eşleşen bir şey yok. Tarama sonuçları ve Pi sayıları değişmedi.`;
       $("empty-clear").hidden = false;
     } else if (node && result.state === "fresh") {
-      title = view.radio === "wifi" ? "No access points discovered" : "No devices discovered";
-      description = "This Pi's latest scan completed successfully with zero observations.";
+      title = view.radio === "wifi" ? "Erişim noktası bulunamadı" : "Cihaz bulunamadı";
+      description = "Bu Pi'nin son taraması başarıyla tamamlandı ancak hiç gözlem bulunamadı.";
     } else if (node && result.state === "disabled") {
-      title = `${radioName()} is disabled`;
-      description = "This radio is disabled in the Pi's agent configuration.";
+      title = `${radioName()} devre dışı`;
+      description = "Bu radyo, Pi'nin ajan yapılandırmasında devre dışı bırakılmış.";
     } else if (node && result.state === "error") {
-      title = `${radioName()} scan needs attention`;
-      description = result.error || "The Pi reported a scan error. The other radio can continue reporting.";
+      title = `${radioName()} taraması dikkat gerektiriyor`;
+      description = result.error || "Pi bir tarama hatası bildirdi. Diğer radyo rapor vermeye devam edebilir.";
     } else if (node && result.state === "offline") {
-      title = "This Pi is offline";
-      description = "No recent reports have reached the server. Other Pis continue independently.";
+      title = "Bu Pi çevrimdışı";
+      description = "Sunucuya yakın zamanda rapor ulaşmadı. Diğer Pi'ler bağımsız olarak çalışmaya devam ediyor.";
     } else if (node && result.state === "waiting") {
-      title = `Waiting for ${radioName()}`;
-      description = "This Pi has not sent a successful scan for the selected radio yet.";
+      title = `${radioName()} bekleniyor`;
+      description = "Bu Pi seçili radyo için henüz başarılı bir tarama göndermedi.";
     }
     if (!connected && !scoped.length) {
-      title = "Waiting for the server";
-      description = "This view is outdated. It will recover automatically when the server responds.";
+      title = "Sunucu bekleniyor";
+      description = "Bu görünüm güncel değil. Sunucu yanıt verdiğinde otomatik olarak düzelecek.";
     }
     $("empty-title").textContent = title;
     $("empty-description").textContent = description;
@@ -631,7 +632,7 @@
 
   function displayName(name) {
     if (name === "Strength" && view.radio === "wifi") return "Strength (%)";
-    return { RSSI: "RSSI (dBm)", Frequency: "Frequency (MHz)", MaxBitrate: "MaxBitrate (advertised Kb/s)", TxPower: "TxPower (dBm)" }[name] || name;
+    return { RSSI: "RSSI (dBm)", Frequency: "Frequency (MHz)", MaxBitrate: "MaxBitrate (ilan edilen Kb/s)", TxPower: "TxPower (dBm)" }[name] || name;
   }
   function isMono(name, value) {
     return monoFields.has(name) || (typeof value === "string" && /^(?:[0-9a-f]{2}[:-]){2,}[0-9a-f]{2}$|^(?:0x)?[0-9a-f]{6,}$/i.test(value));
@@ -658,8 +659,8 @@
     const summary = element("div", "detail-summary");
     summary.append(element("h3", "", recordName(properties)), element("p", "detail-address", address(properties)));
     const chips = element("div", "chips");
-    chips.append(element("span", "chip", view.radio === "wifi" ? "Wi-Fi access point" : "Bluetooth observation"), element("span", "chip", `${reporters.size} reporting ${plural(reporters.size, "Pi", "Pis")}`));
-    if (state !== "fresh") chips.append(element("span", "chip old", state === "outdated" ? "Outdated view" : "Previous result"));
+    chips.append(element("span", "chip", view.radio === "wifi" ? "Wi-Fi erişim noktası" : "Bluetooth gözlemi"), element("span", "chip", `${reporters.size} Pi bildirdi`));
+    if (state !== "fresh") chips.append(element("span", "chip old", state === "outdated" ? "Güncel olmayan görünüm" : "Önceki sonuç"));
     summary.append(chips);
     content.append(summary);
 
@@ -672,22 +673,22 @@
       (identical ? same : differ).push({ field, values });
     }
     if (same.length) {
-      const section = detailSection(row.observations.length > 1 ? `Same in all ${row.observations.length} reports` : "Identity");
+      const section = detailSection(row.observations.length > 1 ? `${row.observations.length} raporun tümünde aynı` : "Kimlik");
       const list = element("dl", "kv");
       for (const { field, values } of same) list.append(element("dt", "", displayName(field)), valueElement("dd", field, values[0]));
       section.append(list);
       content.append(section);
     }
     if (differ.length) {
-      const section = detailSection("Differs between reports");
-      section.append(element("p", "section-note", "Each Pi's value is kept as reported; nothing is merged."));
+      const section = detailSection("Raporlar arasında farklı");
+      section.append(element("p", "section-note", "Her Pi'nin değeri bildirildiği gibi korunur; hiçbir şey birleştirilmez."));
       const list = element("dl", "differences");
       for (const { field, values } of differ) {
         const group = element("div");
         const values_ = element("ul");
         row.observations.forEach((item, index) => {
           const entry = element("li", "", `${nodeLabel(item.node_id)}: `);
-          entry.append(values[index] === undefined ? element("span", "absent", "not reported") : valueElement("span", field, values[index]));
+          entry.append(values[index] === undefined ? element("span", "absent", "bildirilmedi") : valueElement("span", field, values[index]));
           values_.append(entry);
         });
         const description = element("dd");
@@ -699,10 +700,10 @@
       content.append(section);
     }
 
-    const measures = detailSection(row.observations.length > 1 ? "Per-Pi measurements" : "Measurement");
+    const measures = detailSection(row.observations.length > 1 ? "Pi bazında ölçümler" : "Ölçüm");
     const table = element("table", "measure-table");
     const head = element("tr");
-    for (const text of ["Pi", "Signal", "Report"]) {
+    for (const text of ["Pi", "Sinyal", "Rapor"]) {
       const cell = element("th", "", text);
       cell.scope = "col";
       head.append(cell);
@@ -721,7 +722,7 @@
       const meter = signalMeter();
       setMeter(meter, signalValue(item.properties));
       signalCell.append(meter, document.createTextNode(signalText(item.properties)));
-      if (!connected || result?.state !== "fresh") signalCell.append(element("span", "old-tag", "old"));
+      if (!connected || result?.state !== "fresh") signalCell.append(element("span", "old-tag", "eski"));
       const reportCell = element("td");
       const age = element("span", "location");
       age.dataset.ageNode = item.node_id;
@@ -733,18 +734,18 @@
     measures.append(table);
     content.append(measures);
 
-    const raw = detailSection("All reported properties");
-    raw.append(element("p", "section-note", "Original names and values from each report, including the scanner object path."));
+    const raw = detailSection("Bildirilen tüm özellikler");
+    raw.append(element("p", "section-note", "Her rapordaki özgün özellik adları ve değerleri, tarama nesne yolu (object path) dahil."));
     for (const item of row.observations) {
       const key = `${item.node_id}\n${item.path}`;
       const details = element("details", "reporter-detail");
       details.open = openDetails.has(key);
       details.addEventListener("toggle", () => { if (details.open) openDetails.add(key); else openDetails.delete(key); });
-      const heading = element("summary", "", `${nodeLabel(item.node_id)} · ${signalText(item.properties)} · ${Object.keys(item.properties).length} properties`);
+      const heading = element("summary", "", `${nodeLabel(item.node_id)} · ${signalText(item.properties)} · ${Object.keys(item.properties).length} özellik`);
       heading.dataset.focusKey = key;
       details.append(heading, element("p", "object-path", item.path));
       if (view.radio === "bluetooth" && Object.keys(item.properties).some((name) => adapterFields.has(name))) {
-        details.append(element("p", "adapter-note", "Paired, Connected and similar values describe this Pi's adapter, not building-wide presence."));
+        details.append(element("p", "adapter-note", "Paired, Connected ve benzeri değerler bu Pi'nin adaptörünü tanımlar; cihazın binadaki varlığını göstermez."));
       }
       const list = element("dl", "properties-list");
       for (const [name, value] of Object.entries(item.properties).sort(([left], [right]) => left.localeCompare(right))) {
@@ -761,7 +762,7 @@
   function updateDetailAges() {
     for (const cell of $("properties").querySelectorAll("[data-age-node]")) {
       const result = nodeById(cell.dataset.ageNode)?.radios[view.radio];
-      cell.textContent = result ? `Scan report ${ageText(result.age)}` : "Scan report unknown";
+      cell.textContent = result ? `Tarama raporu ${ageText(result.age)}` : "Tarama raporu bilinmiyor";
     }
   }
   function renderDetails(rows, node) {
@@ -769,9 +770,9 @@
     const state = freshness(node);
     $("details-empty").hidden = !!row;
     $("properties").hidden = !row;
-    $("detail-state").textContent = !row ? (selectionNote ? "Selection cleared" : "No selection") : state === "outdated" ? "Outdated snapshot" : state === "retained" ? "Previous result · not current" : "Fresh observation";
+    $("detail-state").textContent = !row ? (selectionNote ? "Seçim temizlendi" : "Seçim yok") : state === "outdated" ? "Güncel olmayan görünüm" : state === "retained" ? "Önceki sonuç · güncel değil" : "Güncel gözlem";
     if (!row) {
-      $("details-empty").textContent = selectionNote || "Select an observation to see its identity, each reporting Pi's measurement and every reported property.";
+      $("details-empty").textContent = selectionNote || "Kimliğini, bildiren her Pi'nin ölçümünü ve bildirilen tüm özellikleri görmek için bir gözlem seçin.";
       detailsKey = "";
       $("properties").replaceChildren();
       return;
@@ -805,7 +806,7 @@
     if (observationId && !rows.some((row) => row.id === observationId)) {
       observationId = null;
       openDetails.clear();
-      selectionNote = "The selected observation is no longer in this view: it left the current results or no longer matches the search.";
+      selectionNote = "Seçili gözlem artık bu görünümde değil: güncel sonuçlardan çıktı ya da aramayla artık eşleşmiyor.";
       writeHash(false);
     }
     if (previewId && !rows.some((row) => row.id === previewId)) previewId = null;
@@ -1008,17 +1009,17 @@
 
   function renderConnection() {
     $("connection").className = `connection ${connected ? "connected" : attempted ? "disconnected" : ""}`;
-    $("connection-state").textContent = connected ? "Server connected" : attempted ? "Server unavailable" : "Connecting";
+    $("connection-state").textContent = connected ? "Sunucuya bağlı" : attempted ? "Sunucuya ulaşılamıyor" : "Bağlanıyor";
     let age = "";
     if (receivedAt) {
       const seconds = (Date.now() - receivedAt.getTime()) / 1000;
-      age = connected ? `Dashboard received ${ageText(seconds)}` : `Last received ${receivedAt.toLocaleTimeString()} · outdated`;
+      age = connected ? `Pano verisi ${ageText(seconds)} alındı` : `Son alınan: ${receivedAt.toLocaleTimeString("tr-TR")} · güncel değil`;
     }
     $("connection-age").textContent = age;
     $("connection-banner").hidden = connected || !attempted;
     $("connection-banner").textContent = snapshot
-      ? "Connection lost. The last received view is outdated; counts are unavailable until the server responds. Retrying automatically."
-      : "Cannot reach the dashboard server. Waiting for a response and retrying automatically.";
+      ? "Bağlantı kesildi. Son alınan görünüm güncel değil; sunucu yanıt verene kadar sayılar kullanılamaz. Otomatik olarak yeniden deneniyor."
+      : "Pano sunucusuna ulaşılamıyor. Yanıt bekleniyor ve otomatik olarak yeniden deneniyor.";
   }
   function updateStickyTop() {
     const bar = $("topbar");
@@ -1063,7 +1064,8 @@
 
   // Theme: automatic follows the OS through CSS; an explicit choice is a per-browser convenience.
   const themeOrder = ["auto", "light", "dark"];
-  const themeNames = { auto: "automatic (follows your system)", light: "light", dark: "dark" };
+  const themeNames = { auto: "otomatik (sistemi izler)", light: "açık", dark: "koyu" };
+  const themeShort = { auto: "Otomatik", light: "Açık", dark: "Koyu" };
   const themeIcons = {
     auto: [["circle", { cx: 12, cy: 12, r: 8 }], ["path", { d: "M12 4a8 8 0 0 1 0 16z", fill: "currentColor" }]],
     light: [["circle", { cx: 12, cy: 12, r: 4 }], ["path", { d: "M12 2.5v2m0 15v2M4.6 4.6 6 6m12 12 1.4 1.4M2.5 12h2m15 0h2M4.6 19.4 6 18M18 6l1.4-1.4" }]],
@@ -1083,8 +1085,8 @@
     const next = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
     const button = $("theme-toggle");
     button.dataset.theme = theme;
-    button.title = `Theme: ${themeNames[theme]}`;
-    button.setAttribute("aria-label", `Theme: ${themeNames[theme]}. Switch to ${next === "auto" ? "automatic" : next} theme`);
+    button.title = `Tema: ${themeNames[theme]}`;
+    button.setAttribute("aria-label", `Tema: ${themeNames[theme]}. ${themeShort[next]} temaya geç`);
     const icon = svgElement("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" });
     for (const [tag, attributes] of themeIcons[theme]) icon.append(svgElement(tag, attributes));
     button.replaceChildren(icon);
@@ -1111,7 +1113,7 @@
     const diagram = !$("map-mode").classList.contains("active");
     $("map-mode").classList.toggle("active", diagram);
     $("map-mode").setAttribute("aria-pressed", String(diagram));
-    $("map-mode").textContent = diagram ? "Show overview" : "Show diagram";
+    $("map-mode").textContent = diagram ? "Özeti göster" : "Planı göster";
     document.querySelector(".building").classList.toggle("show-diagram", diagram);
   });
   $("search").addEventListener("input", () => setQuery($("search").value));
@@ -1123,7 +1125,7 @@
     writeHash(false);
     render();
   });
-  $("sort-now").title = "Polling keeps the current order and adds new rows at the end. Sort now reorders every row.";
+  $("sort-now").title = "Otomatik güncellemeler mevcut sırayı korur ve yeni satırları sona ekler. Şimdi sırala tüm satırları yeniden sıralar.";
   $("sort-now").addEventListener("click", sortNow);
   $("new-rows").addEventListener("click", sortNow);
   $("export-button").addEventListener("click", exportJson);
